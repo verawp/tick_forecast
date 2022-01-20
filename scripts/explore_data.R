@@ -4,24 +4,33 @@ library(rnaturalearth)
 library(ggrepel)
 library(riem)
 
+
+# Load data ---------------------------------------------------------------
+
+# State polygons in sf format
 state_shapes <- ne_states(country = "United States of America",
                           returnclass = "sf")
 
+# Tick data
 # https://projects.ecoforecast.org/neon4cast-docs/theme-tick-populations.html
 tick_data <- read_csv("https://data.ecoforecast.org/targets/ticks/ticks-targets.csv.gz",
                       guess_max = 1e6)
 
+# Preview the data
 head(tick_data)
 
+# Convert tick data to spatial format
 tick_sf <- st_as_sf(tick_data,
-                    coords = c("decimalLongitude","decimalLatitude")) %>%
+                    coords = c("decimalLongitude", "decimalLatitude")) %>%
   st_set_crs(st_crs(state_shapes))
 
 
+# Create reference map of sites -------------------------------------------
+
+# Manually summarize the locations to a single point each
 plot_counts <- tribble(
   ~label, ~lat, ~long,
   "BLAN: 2 plots", 39.086224, -77.972736,
-  
   "KONZ: 1 plot", 39.103714, -96.597835, 
   "ORNL: 6 plots", 35.983081, -84.211655,
   "SCBI: 2 plots", 38.893863, -78.1427,
@@ -32,7 +41,8 @@ plot_counts <- tribble(
   st_as_sf(coords = c("long", "lat")) %>%
   st_set_crs(st_crs(state_shapes))
 
-ggplot() +
+# Create map
+site_map <- ggplot() +
   geom_sf(data = state_shapes) +
   geom_sf(data = plot_counts, color = "black", fill = "red", size = 2, pch = 21) +
   geom_label_repel(
@@ -48,8 +58,11 @@ ggplot() +
   ylab("Latitude") +
   theme_bw()
 
+ggsave(filename = "figures/site_overview_map.png", plot = site_map,
+       device = "png", width = 6, height = 4, units = "in")
 
-# weather -----------------------------------------------------------------
+
+# Explore some options for daily weather data -----------------------------
 
 # Locations in KS
 tick_data %>%
@@ -103,44 +116,5 @@ tick_data %>%
 
 # SERC, distance: ~8.9 mi
 riem_measures(station = "NAK", date_start = "2015-01-01", date_end = "2020-01-01")
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
