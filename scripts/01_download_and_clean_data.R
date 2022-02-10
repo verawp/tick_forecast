@@ -100,6 +100,7 @@ tick_standard <- tick_long %>%
   summarise(totalCount = sum(processedCount), # all counts in a week
             totalArea = sum(totalSampledArea),# total area surveyed in a week
             amblyomma_americanum = totalCount / totalArea * 1600) %>% # scale to the size of a plot
+  # Add MMWR week (CDC's Morbidity and Mortality Weekly Report)
   mutate(mmwrWeek = MMWRweek(time)$MMWRweek) %>% 
   arrange(siteID, time) %>% 
   filter() %>% 
@@ -113,7 +114,10 @@ run_mmwrWeek <- MMWRweek(run_date)$MMWRweek
 challenge_time <- MMWRweek2Date(year(run_date), run_mmwrWeek)
 
 tick_targets <- tick_standard %>% 
-  filter(time < challenge_time)
+  filter(time < challenge_time) %>%
+  mutate(year = year(time),
+         day_num = yday(time)) %>%
+  select(site_id = siteID, mmwr_week = mmwrWeek, time, year, day_num, amblyomma_americanum)
 
 # Write targets to csv
 write_csv(tick_targets,
