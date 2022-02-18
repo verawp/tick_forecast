@@ -182,9 +182,9 @@ temp_compiled <- map_df(.x = list.files(path = "data/high_temporal_res/",
                           # Aggregate data to day level
                           agg_data <- temp_data %>%
                             group_by(year = year(startDateTime), day = yday(startDateTime)) %>%
-                            summarize(mean_temp = mean(tempSingleMean, na.rm = TRUE),
-                                      min_temp = min(tempSingleMinimum, na.rm = TRUE),
-                                      max_temp = max(tempSingleMaximum, na.rm = TRUE),
+                            summarize(mean_temp_c = mean(tempSingleMean, na.rm = TRUE),
+                                      min_temp_c = min(tempSingleMinimum, na.rm = TRUE),
+                                      max_temp_c = max(tempSingleMaximum, na.rm = TRUE),
                                       mean_var_temp = mean(tempSingleVariance, na.rm = TRUE)) %>%
                             ungroup()
                           
@@ -329,62 +329,119 @@ read_rds("data/high_temporal_res/blan_30min_thrpre.rds") %>%
 
 # Compile all precip datasets into one data frame
 precip_compiled <- map_df(.x = list.files(path = "data/high_temporal_res/",
-                                      pattern = "30min_thrpre.rds",
-                                      full.names = TRUE),
-                      .f = ~ {
-                        
-                        # Keep the site ID for later use
-                        site_id <- gsub(pattern = "data/high_temporal_res/|_30min_thrpre.rds",
-                                        replacement = "",
-                                        x = .x)
-                        
-                        # Read in data and filter for the lowest tier of the tower
-                        precip_data <- read_rds(.x) %>%
-                          filter(verticalPosition == "000")
-                        
-                        # Get proportion of each day's bulk records that are NA values
-                        prop_na <- precip_data %>%
-                          add_count(year = year(startDateTime), day = yday(startDateTime)) %>%
-                          group_by(year, day) %>%
-                          summarize(total_n = unique(n),
-                                    non_na_count = sum(!is.na(TFPrecipBulk)),
-                                    prop_na = round(((total_n - non_na_count) / total_n),
-                                                    digits = 2)) %>%
-                          select(year, day, total_n, prop_na)
-                        
-                        # Aggregate data to day level
-                        agg_data <- precip_data %>%
-                          group_by(year = year(startDateTime), day = yday(startDateTime)) %>%
-                          summarize(sum_precip_mm= sum(TFPrecipBulk, na.rm = TRUE)) %>%
-                          ungroup()
-                        
-                        # Join aggregated data with NA proportions
-                        data_output <- left_join(
-                          x = agg_data,
-                          y = prop_na,
-                          by = c("year", "day")) %>%
-                          mutate(
-                            # Tag with site ID
-                            site = site_id,
-                            # Replace Infinite values and NaN with NAs
-                            across(.cols = where(is.numeric),
-                                   .fns =  ~na_if(., Inf)),
-                            across(.cols = where(is.numeric),
-                                   .fns =  ~na_if(., -Inf)),
-                            across(.cols = where(is.double),
-                                   .fns = ~if_else(condition = is.nan(.),
-                                                   true = NA_real_,
-                                                   false = .)),
-                            ,
-                            date = (ymd(paste0(year, "-01-01")) + day) - 1) %>%
-                          # Rearrange for easier reading
-                          select(site, year, day, date, total_n, prop_na, everything())
-                        
-                        # Return to the outer function
-                        return(data_output)
-                        
-                      }) 
+                                          pattern = "30min_thrpre.rds",
+                                          full.names = TRUE),
+                          .f = ~ {
+                            
+                            # Keep the site ID for later use
+                            site_id <- gsub(pattern = "data/high_temporal_res/|_30min_thrpre.rds",
+                                            replacement = "",
+                                            x = .x)
+                            
+                            # Read in data and filter for the lowest tier of the tower
+                            precip_data <- read_rds(.x) %>%
+                              filter(verticalPosition == "000")
+                            
+                            # Get proportion of each day's bulk records that are NA values
+                            prop_na <- precip_data %>%
+                              add_count(year = year(startDateTime), day = yday(startDateTime)) %>%
+                              group_by(year, day) %>%
+                              summarize(total_n = unique(n),
+                                        non_na_count = sum(!is.na(TFPrecipBulk)),
+                                        prop_na = round(((total_n - non_na_count) / total_n),
+                                                        digits = 2)) %>%
+                              select(year, day, total_n, prop_na)
+                            
+                            # Aggregate data to day level
+                            agg_data <- precip_data %>%
+                              group_by(year = year(startDateTime), day = yday(startDateTime)) %>%
+                              summarize(sum_precip_mm= sum(TFPrecipBulk, na.rm = TRUE)) %>%
+                              ungroup()
+                            
+                            # Join aggregated data with NA proportions
+                            data_output <- left_join(
+                              x = agg_data,
+                              y = prop_na,
+                              by = c("year", "day")) %>%
+                              mutate(
+                                # Tag with site ID
+                                site = site_id,
+                                # Replace Infinite values and NaN with NAs
+                                across(.cols = where(is.numeric),
+                                       .fns =  ~na_if(., Inf)),
+                                across(.cols = where(is.numeric),
+                                       .fns =  ~na_if(., -Inf)),
+                                across(.cols = where(is.double),
+                                       .fns = ~if_else(condition = is.nan(.),
+                                                       true = NA_real_,
+                                                       false = .)),
+                                ,
+                                date = (ymd(paste0(year, "-01-01")) + day) - 1) %>%
+                              # Rearrange for easier reading
+                              select(site, year, day, date, total_n, prop_na, everything())
+                            
+                            # Return to the outer function
+                            return(data_output)
+                            
+                          }) 
 
 # Export the final temp dataset
 write_csv(x = precip_compiled,
           file = "data/neon_precip_compiled.csv")
+
+
+# Combine the weather datasets with the tick target data
+
+tick_targets
+temp_compiled
+rh_compiled
+precip_compiled
+
+# Vector of final columns that will need some values turned into NAs again
+cols_to_fix <- c("mean_temp", "min_temp", "max_temp", "mean_var_temp",
+                 "mean_rh_pct", "min_rh_pct", "max_rh_pct", "mean_var_rh",
+                 "sum_precip_mm")
+
+full_dataset <- reduce(.x = list(
+  tick_targets,
+  temp_compiled %>%
+    rename(prop_na_temp = prop_na) %>%
+    group_by(site_id = site, year, mmwr_week = epiweek(date)) %>%
+    summarize(site_id = toupper(site_id),
+              mean_temp = mean(mean_temp_c, na.rm = TRUE),
+              min_temp = min(min_temp_c, na.rm = TRUE),
+              max_temp = max(max_temp_c, na.rm = TRUE),
+              mean_var_temp = mean(mean_var_temp, na.rm = TRUE)) %>%
+    ungroup(),
+  rh_compiled %>%
+    rename(prop_na_rh = prop_na) %>%
+    group_by(site_id = site, year, mmwr_week = epiweek(date)) %>%
+    summarize(site_id = toupper(site_id),
+              mean_rh_pct = mean(mean_rh_pct, na.rm = TRUE),
+              min_rh_pct = min(min_rh_pct, na.rm = TRUE),
+              max_rh_pct = max(max_rh_pct, na.rm = TRUE),
+              mean_var_rh = mean(mean_var_rh, na.rm = TRUE)),
+  precip_compiled %>%
+    rename(prop_na_precip = prop_na) %>%
+    group_by(site_id = site, year, mmwr_week = epiweek(date)) %>%
+    summarize(site_id = toupper(site_id),
+              sum_precip_mm = sum(sum_precip_mm, na.rm = TRUE))),
+  .f = left_join,
+  by = c("site_id", "year", "mmwr_week")) %>%
+  mutate(# Replace Infinite values and NaN with NAs
+    across(.cols = cols_to_fix,
+           .fns =  ~na_if(., Inf)),
+    across(.cols = cols_to_fix,
+           .fns =  ~na_if(., -Inf)),
+    across(.cols = cols_to_fix,
+           .fns = ~if_else(condition = is.nan(.),
+                           true = NA_real_,
+                           false = .))) %>%
+  distinct()
+
+write_csv(x = full_dataset,
+          file = "data/ticks_with_weather.csv")
+
+
+
+

@@ -1,4 +1,4 @@
-site,year,day,date,total_n,prop_na,mean_temp,min_temp,max_temp,mean_var_temp
+site,year,day,date,total_n,prop_na,mean_temp_c,min_temp_c,max_temp_c,mean_var_temp
 blan,2014,257,2014-09-14,48,0.98,8.5332,8.5232,8.5437,0
 blan,2014,258,2014-09-15,48,0.98,6.6166,6.6124,6.6203,0
 blan,2014,259,2014-09-16,48,0.98,17.8593,17.8532,17.8668,0
