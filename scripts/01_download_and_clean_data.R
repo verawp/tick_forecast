@@ -122,3 +122,269 @@ tick_targets <- tick_standard %>%
 # Write targets to csv
 write_csv(tick_targets,
           file = "data/ticks_target.csv")
+
+
+# Weather data from NEON --------------------------------------------------
+
+# Download steps take an hour or more total
+
+# SAAT: Single aspirated air temperature
+neon_download(product = "DP1.00002.001",
+              site = target_sites)
+
+# See what was downloaded
+neon_index()
+
+
+# Combine and export
+walk(.x = target_sites,
+     .f = ~ {
+       
+       temp_df <- neon_read(table = "SAAT_30min-basic", site = .x)
+       
+       write_rds(x = temp_df,
+                 file = paste0("data/high_temporal_res/", tolower(.x), "_30min_temps.rds"))
+       
+     })
+
+# Take a look at a single dataset for insight:
+# There are 3 vertical positions, with their own vals for each 30 min
+read_rds("data/high_temporal_res/blan_30min_temps.rds") %>%
+  count(year(startDateTime), yday(startDateTime), verticalPosition)
+
+# For now I'm going to stick with the lowest one, 010
+
+# Compile all temperature datasets into one data frame
+temp_compiled <- map_df(.x = list.files(path = "data/high_temporal_res/",
+                                        pattern = "30min_temps.rds",
+                                        full.names = TRUE),
+                        .f = ~ {
+                          
+                          # Keep the site ID for later use
+                          site_id <- gsub(pattern = "data/high_temporal_res/|_30min_temps.rds",
+                                          replacement = "",
+                                          x = .x)
+                          
+                          # Read in data and filter for the lowest tier of the tower
+                          temp_data <- read_rds(.x) %>%
+                            filter(verticalPosition == "010")
+                          
+                          # Get proportion of each day's mean records that are NA values
+                          prop_na <- temp_data %>%
+                            add_count(year = year(startDateTime), day = yday(startDateTime)) %>%
+                            group_by(year, day) %>%
+                            summarize(total_n = unique(n),
+                                      non_na_count = sum(!is.na(tempSingleMean)),
+                                      prop_na = round(((total_n - non_na_count) / total_n),
+                                                      digits = 2)) %>%
+                            select(year, day, total_n, prop_na)
+                          
+                          # Aggregate data to day level
+                          agg_data <- temp_data %>%
+                            group_by(year = year(startDateTime), day = yday(startDateTime)) %>%
+                            summarize(mean_temp = mean(tempSingleMean, na.rm = TRUE),
+                                      min_temp = min(tempSingleMinimum, na.rm = TRUE),
+                                      max_temp = max(tempSingleMaximum, na.rm = TRUE),
+                                      mean_var_temp = mean(tempSingleVariance, na.rm = TRUE)) %>%
+                            ungroup()
+                          
+                          # Join aggregated data with NA proportions
+                          data_output <- left_join(
+                            x = agg_data,
+                            y = prop_na,
+                            by = c("year", "day")) %>%
+                            mutate(
+                              # Tag with site ID
+                              site = site_id,
+                              # Replace Infinite values and NaN with NAs
+                              across(.cols = where(is.numeric),
+                                     .fns =  ~na_if(., Inf)),
+                              across(.cols = where(is.numeric),
+                                     .fns =  ~na_if(., -Inf)),
+                              across(.cols = where(is.double),
+                                     .fns = ~if_else(condition = is.nan(.),
+                                                     true = NA_real_,
+                                                     false = .)),
+                              date = (ymd(paste0(year, "-01-01")) + day) - 1) %>%
+                            # Rearrange for easier reading
+                            select(site, year, day, date, total_n, prop_na, everything())
+                          
+                          # Return to the outer function
+                          return(data_output)
+                          
+                        }) 
+
+# Export the final temp dataset
+write_csv(x = temp_compiled,
+          file = "data/neon_temp_compiled.csv")
+
+
+# Relative humidity
+neon_download(product = "DP1.00098.001",
+              site = target_sites)
+
+# Combine and export
+walk(.x = target_sites,
+     .f = ~ {
+       
+       temp_df <- neon_read(table = "RH_30min-basic", site = .x)
+       
+       write_rds(x = temp_df,
+                 file = paste0("data/high_temporal_res/", tolower(.x), "_30min_rh.rds"))
+       
+     })
+
+# Take a look at a single dataset for insight:
+# There are 2 vertical positions, with their own vals for each 30 min
+read_rds("data/high_temporal_res/blan_30min_rh.rds") %>%
+  count(year(startDateTime), yday(startDateTime), verticalPosition)
+
+# For now I'm going to stick with the lowest one, 000
+
+# Compile all RH datasets into one data frame
+rh_compiled <- map_df(.x = list.files(path = "data/high_temporal_res/",
+                                      pattern = "30min_rh.rds",
+                                      full.names = TRUE),
+                      .f = ~ {
+                        
+                        # Keep the site ID for later use
+                        site_id <- gsub(pattern = "data/high_temporal_res/|_30min_rh.rds",
+                                        replacement = "",
+                                        x = .x)
+                        
+                        # Read in data and filter for the lowest tier of the tower
+                        rh_data <- read_rds(.x) %>%
+                          filter(verticalPosition == "000")
+                        
+                        # Get proportion of each day's mean records that are NA values
+                        prop_na <- rh_data %>%
+                          add_count(year = year(startDateTime), day = yday(startDateTime)) %>%
+                          group_by(year, day) %>%
+                          summarize(total_n = unique(n),
+                                    non_na_count = sum(!is.na(RHMean)),
+                                    prop_na = round(((total_n - non_na_count) / total_n),
+                                                    digits = 2)) %>%
+                          select(year, day, total_n, prop_na)
+                        
+                        # Aggregate data to day level
+                        agg_data <- rh_data %>%
+                          group_by(year = year(startDateTime), day = yday(startDateTime)) %>%
+                          summarize(mean_rh_pct = mean(RHMean, na.rm = TRUE),
+                                    min_rh_pct = min(RHMinimum, na.rm = TRUE),
+                                    max_rh_pct = max(RHMaximum, na.rm = TRUE),
+                                    mean_var_rh = mean(RHVariance, na.rm = TRUE)) %>%
+                          ungroup()
+                        
+                        # Join aggregated data with NA proportions
+                        data_output <- left_join(
+                          x = agg_data,
+                          y = prop_na,
+                          by = c("year", "day")) %>%
+                          mutate(
+                            # Tag with site ID
+                            site = site_id,
+                            # Replace Infinite values and NaN with NAs
+                            across(.cols = where(is.numeric),
+                                   .fns =  ~na_if(., Inf)),
+                            across(.cols = where(is.numeric),
+                                   .fns =  ~na_if(., -Inf)),
+                            across(.cols = where(is.double),
+                                   .fns = ~if_else(condition = is.nan(.),
+                                                   true = NA_real_,
+                                                   false = .)),
+                            date = (ymd(paste0(year, "-01-01")) + day) - 1) %>%
+                          # Rearrange for easier reading
+                          select(site, year, day, date, total_n, prop_na, everything())
+                        
+                        # Return to the outer function
+                        return(data_output)
+                        
+                      }) 
+
+# Export the final temp dataset
+write_csv(x = rh_compiled,
+          file = "data/neon_rh_compiled.csv")
+
+
+# Precip
+neon_download(product = "DP1.00006.001",
+              site = target_sites)
+
+# Combine and export
+walk(.x = target_sites,
+     .f = ~ {
+       
+       temp_df <- neon_read(table = "THRPRE_30min-basic", site = .x)
+       
+       write_rds(x = temp_df,
+                 file = paste0("data/high_temporal_res/", tolower(.x), "_30min_thrpre.rds"))
+       
+     })
+
+# Take a look at a single dataset for insight:
+# There's only one vertical position
+read_rds("data/high_temporal_res/blan_30min_thrpre.rds") %>%
+  pull(verticalPosition) %>%
+  unique()
+
+# Compile all precip datasets into one data frame
+precip_compiled <- map_df(.x = list.files(path = "data/high_temporal_res/",
+                                      pattern = "30min_thrpre.rds",
+                                      full.names = TRUE),
+                      .f = ~ {
+                        
+                        # Keep the site ID for later use
+                        site_id <- gsub(pattern = "data/high_temporal_res/|_30min_thrpre.rds",
+                                        replacement = "",
+                                        x = .x)
+                        
+                        # Read in data and filter for the lowest tier of the tower
+                        precip_data <- read_rds(.x) %>%
+                          filter(verticalPosition == "000")
+                        
+                        # Get proportion of each day's bulk records that are NA values
+                        prop_na <- precip_data %>%
+                          add_count(year = year(startDateTime), day = yday(startDateTime)) %>%
+                          group_by(year, day) %>%
+                          summarize(total_n = unique(n),
+                                    non_na_count = sum(!is.na(TFPrecipBulk)),
+                                    prop_na = round(((total_n - non_na_count) / total_n),
+                                                    digits = 2)) %>%
+                          select(year, day, total_n, prop_na)
+                        
+                        # Aggregate data to day level
+                        agg_data <- precip_data %>%
+                          group_by(year = year(startDateTime), day = yday(startDateTime)) %>%
+                          summarize(sum_precip_mm= sum(TFPrecipBulk, na.rm = TRUE)) %>%
+                          ungroup()
+                        
+                        # Join aggregated data with NA proportions
+                        data_output <- left_join(
+                          x = agg_data,
+                          y = prop_na,
+                          by = c("year", "day")) %>%
+                          mutate(
+                            # Tag with site ID
+                            site = site_id,
+                            # Replace Infinite values and NaN with NAs
+                            across(.cols = where(is.numeric),
+                                   .fns =  ~na_if(., Inf)),
+                            across(.cols = where(is.numeric),
+                                   .fns =  ~na_if(., -Inf)),
+                            across(.cols = where(is.double),
+                                   .fns = ~if_else(condition = is.nan(.),
+                                                   true = NA_real_,
+                                                   false = .)),
+                            ,
+                            date = (ymd(paste0(year, "-01-01")) + day) - 1) %>%
+                          # Rearrange for easier reading
+                          select(site, year, day, date, total_n, prop_na, everything())
+                        
+                        # Return to the outer function
+                        return(data_output)
+                        
+                      }) 
+
+# Export the final temp dataset
+write_csv(x = precip_compiled,
+          file = "data/neon_precip_compiled.csv")
