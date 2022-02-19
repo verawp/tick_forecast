@@ -12,6 +12,8 @@ library(stringr) # for searching within character strings
 library(parallel) # for using more than one core in download
 library(MMWRweek) # for converting from date to MMWR week
 library(neonstore)
+library(riem)
+library(measurements)
 
 # Select target species and life stage
 target_species <- "Amblyomma americanum"
@@ -443,5 +445,527 @@ write_csv(x = full_dataset,
           file = "data/ticks_with_weather.csv")
 
 
+# Additional weather data -------------------------------------------------
 
+full_dataset %>%
+  group_by(site_id) %>%
+  summarize(min_date = min(time),
+            max_date = max(time))
+
+neon_sites <- read_csv(file = "data/Ticks_NEON_Field_Site_Metadata_20210928.csv") %>%
+  select(field_domain_id, field_site_id, field_site_name, field_site_state,
+         field_latitude, field_longitude) 
+
+# MHK near KONZ
+konz_additional <- riem_measures(station = "MHK",
+                                 date_start = "2015-06-28",
+                                 date_end = "2020-09-20")
+
+konz_prop_na <- konz_additional %>%
+  add_count(year = year(valid), day = yday(valid)) %>%
+  group_by(year, day) %>%
+  summarize(total_n = unique(n),
+            non_na_count = sum(!is.na(tmpf)),
+            prop_na = round(((total_n - non_na_count) / total_n),
+                            digits = 2)) %>%
+  select(year, day, total_n, prop_na)
+
+# Aggregate data to day level
+konz_agg <- konz_additional %>%
+  group_by(year = year(valid), day = yday(valid)) %>%
+  summarize(mean_tmpf = mean(tmpf, na.rm = TRUE),
+            min_tmpf = min(tmpf, na.rm = TRUE),
+            max_tmpf = max(tmpf, na.rm = TRUE)) %>%
+  transmute(year,
+            day,
+            mean_temp_c = conv_unit(mean_tmpf, from = "F", to = "C"),
+            min_temp_c = conv_unit(min_tmpf, from = "F", to = "C"),
+            max_temp_c = conv_unit(max_tmpf, from = "F", to = "C")) %>%
+  ungroup()
+
+# Join aggregated data with NA proportions
+konz_output <- left_join(
+  x = konz_agg,
+  y = konz_prop_na,
+  by = c("year", "day")) %>%
+  mutate(
+    # Tag with site ID
+    site_id = "konz",
+    date = (ymd(paste0(year, "-01-01")) + day) - 1) %>%
+  # Rearrange for easier reading
+  select(site_id, year, day, date, total_n, prop_na, everything()) %>%
+  arrange(date)
+
+
+konz_output
+
+temp_compiled
+
+inner_join(x = temp_compiled,
+           y = konz_output,
+           by = c("site" = "site_id", "date", "year", "day"),
+           suffix = c("_full", "_konz")) %>%
+  ggplot() +
+  geom_point(
+    aes(x = mean_temp_c_full, y = mean_temp_c_konz, fill = as.factor(year)),
+    color = "black", shape = 21) +
+  xlab("NEON temp, C") +
+  ylab("ASOS temp, C") +
+  facet_wrap(vars(year)) +
+  scale_fill_viridis_d("Year") +
+  theme_bw() +
+  ggtitle("Site: KONZ")
+
+
+# LWC near UKFS
+ukfs_additional <- riem_measures(station = "LWC",
+                                 date_start = "2015-07-12",
+                                 date_end = "2020-09-27")
+ 
+ukfs_prop_na <- ukfs_additional %>%
+  add_count(year = year(valid), day = yday(valid)) %>%
+  group_by(year, day) %>%
+  summarize(total_n = unique(n),
+            non_na_count = sum(!is.na(tmpf)),
+            prop_na = round(((total_n - non_na_count) / total_n),
+                            digits = 2)) %>%
+  select(year, day, total_n, prop_na)
+
+# Aggregate data to day level
+ukfs_agg <- ukfs_additional %>%
+  group_by(year = year(valid), day = yday(valid)) %>%
+  summarize(mean_tmpf = mean(tmpf, na.rm = TRUE),
+            min_tmpf = min(tmpf, na.rm = TRUE),
+            max_tmpf = max(tmpf, na.rm = TRUE)) %>%
+  transmute(year,
+            day,
+            mean_temp_c = conv_unit(mean_tmpf, from = "F", to = "C"),
+            min_temp_c = conv_unit(min_tmpf, from = "F", to = "C"),
+            max_temp_c = conv_unit(max_tmpf, from = "F", to = "C")) %>%
+  ungroup()
+
+# Join aggregated data with NA proportions
+ukfs_output <- left_join(
+  x = ukfs_agg,
+  y = ukfs_prop_na,
+  by = c("year", "day")) %>%
+  mutate(
+    # Tag with site ID
+    site_id = "ukfs",
+    date = (ymd(paste0(year, "-01-01")) + day) - 1) %>%
+  # Rearrange for easier reading
+  select(site_id, year, day, date, total_n, prop_na, everything()) %>%
+  arrange(date)
+
+inner_join(x = temp_compiled,
+           y = ukfs_output,
+           by = c("site" = "site_id", "date", "year", "day"),
+           suffix = c("_full", "_ukfs")) %>%
+  ggplot() +
+  geom_point(
+    aes(x = mean_temp_c_full, y = mean_temp_c_ukfs, fill = as.factor(year)),
+    color = "black", shape = 21) +
+  xlab("NEON temp, C") +
+  ylab("ASOS temp, C") +
+  facet_wrap(vars(year)) +
+  scale_fill_viridis_d("Year") +
+  theme_bw() +
+  ggtitle("Site: UKFS")
+
+
+
+# OQT near ORNL
+ornl_additional <- riem_measures(station = "OQT",
+                                 date_start = "2014-06-22",
+                                 date_end = "2020-09-06")
+ 
+ornl_prop_na <- ornl_additional %>%
+  add_count(year = year(valid), day = yday(valid)) %>%
+  group_by(year, day) %>%
+  summarize(total_n = unique(n),
+            non_na_count = sum(!is.na(tmpf)),
+            prop_na = round(((total_n - non_na_count) / total_n),
+                            digits = 2)) %>%
+  select(year, day, total_n, prop_na)
+
+# Aggregate data to day level
+ornl_agg <- ornl_additional %>%
+  group_by(year = year(valid), day = yday(valid)) %>%
+  summarize(mean_tmpf = mean(tmpf, na.rm = TRUE),
+            min_tmpf = min(tmpf, na.rm = TRUE),
+            max_tmpf = max(tmpf, na.rm = TRUE)) %>%
+  transmute(year,
+            day,
+            mean_temp_c = conv_unit(mean_tmpf, from = "F", to = "C"),
+            min_temp_c = conv_unit(min_tmpf, from = "F", to = "C"),
+            max_temp_c = conv_unit(max_tmpf, from = "F", to = "C")) %>%
+  ungroup()
+
+# Join aggregated data with NA proportions
+ornl_output <- left_join(
+  x = ornl_agg,
+  y = ornl_prop_na,
+  by = c("year", "day")) %>%
+  mutate(
+    # Tag with site ID
+    site_id = "ornl",
+    date = (ymd(paste0(year, "-01-01")) + day) - 1) %>%
+  # Rearrange for easier reading
+  select(site_id, year, day, date, total_n, prop_na, everything()) %>%
+  arrange(date)
+
+inner_join(x = temp_compiled,
+           y = ornl_output,
+           by = c("site" = "site_id", "date", "year", "day"),
+           suffix = c("_full", "_ornl")) %>%
+  ggplot() +
+  geom_point(
+    aes(x = mean_temp_c_full, y = mean_temp_c_ornl, fill = as.factor(year)),
+    color = "black", shape = 21) +
+  xlab("NEON temp, C") +
+  ylab("ASOS temp, C") +
+  facet_wrap(vars(year)) +
+  scale_fill_viridis_d("Year") +
+  theme_bw() +
+  ggtitle("Site: ORNL")
+
+
+
+# TCL near TALL
+tall_additional <- riem_measures(station = "TCL",
+                                 date_start = "2014-05-25",
+                                 date_end = "2020-09-20")
+ 
+tall_prop_na <- tall_additional %>%
+  add_count(year = year(valid), day = yday(valid)) %>%
+  group_by(year, day) %>%
+  summarize(total_n = unique(n),
+            non_na_count = sum(!is.na(tmpf)),
+            prop_na = round(((total_n - non_na_count) / total_n),
+                            digits = 2)) %>%
+  select(year, day, total_n, prop_na)
+
+# Aggregate data to day level
+tall_agg <- tall_additional %>%
+  group_by(year = year(valid), day = yday(valid)) %>%
+  summarize(mean_tmpf = mean(tmpf, na.rm = TRUE),
+            min_tmpf = min(tmpf, na.rm = TRUE),
+            max_tmpf = max(tmpf, na.rm = TRUE)) %>%
+  transmute(year,
+            day,
+            mean_temp_c = conv_unit(mean_tmpf, from = "F", to = "C"),
+            min_temp_c = conv_unit(min_tmpf, from = "F", to = "C"),
+            max_temp_c = conv_unit(max_tmpf, from = "F", to = "C")) %>%
+  ungroup()
+
+# Join aggregated data with NA proportions
+tall_output <- left_join(
+  x = tall_agg,
+  y = tall_prop_na,
+  by = c("year", "day")) %>%
+  mutate(
+    # Tag with site ID
+    site_id = "tall",
+    date = (ymd(paste0(year, "-01-01")) + day) - 1) %>%
+  # Rearrange for easier reading
+  select(site_id, year, day, date, total_n, prop_na, everything()) %>%
+  arrange(date)
+
+inner_join(x = temp_compiled,
+           y = tall_output,
+           by = c("site" = "site_id", "date", "year", "day"),
+           suffix = c("_full", "_tall")) %>%
+  ggplot() +
+  geom_point(
+    aes(x = mean_temp_c_full, y = mean_temp_c_tall, fill = as.factor(year)),
+    color = "black", shape = 21) +
+  xlab("NEON temp, C") +
+  ylab("ASOS temp, C") +
+  facet_wrap(vars(year)) +
+  scale_fill_viridis_d("Year") +
+  theme_bw() +
+  ggtitle("Site: TALL")
+
+
+
+# DYA kind of near LENO
+leno_additional <- riem_measures(station = "DYA",
+                                 date_start = "2016-05-29",
+                                 date_end = "2019-08-04")
+ 
+leno_prop_na <- leno_additional %>%
+  add_count(year = year(valid), day = yday(valid)) %>%
+  group_by(year, day) %>%
+  summarize(total_n = unique(n),
+            non_na_count = sum(!is.na(tmpf)),
+            prop_na = round(((total_n - non_na_count) / total_n),
+                            digits = 2)) %>%
+  select(year, day, total_n, prop_na)
+
+# Aggregate data to day level
+leno_agg <- leno_additional %>%
+  group_by(year = year(valid), day = yday(valid)) %>%
+  summarize(mean_tmpf = mean(tmpf, na.rm = TRUE),
+            min_tmpf = min(tmpf, na.rm = TRUE),
+            max_tmpf = max(tmpf, na.rm = TRUE)) %>%
+  transmute(year,
+            day,
+            mean_temp_c = conv_unit(mean_tmpf, from = "F", to = "C"),
+            min_temp_c = conv_unit(min_tmpf, from = "F", to = "C"),
+            max_temp_c = conv_unit(max_tmpf, from = "F", to = "C")) %>%
+  ungroup()
+
+# Join aggregated data with NA proportions
+leno_output <- left_join(
+  x = leno_agg,
+  y = leno_prop_na,
+  by = c("year", "day")) %>%
+  mutate(
+    # Tag with site ID
+    site_id = "leno",
+    date = (ymd(paste0(year, "-01-01")) + day) - 1) %>%
+  # Rearrange for easier reading
+  select(site_id, year, day, date, total_n, prop_na, everything()) %>%
+  arrange(date)
+
+inner_join(x = temp_compiled,
+           y = leno_output,
+           by = c("site" = "site_id", "date", "year", "day"),
+           suffix = c("_full", "_leno")) %>%
+  ggplot() +
+  geom_point(
+    aes(x = mean_temp_c_full, y = mean_temp_c_leno, fill = as.factor(year)),
+    color = "black", shape = 21) +
+  xlab("NEON temp, C") +
+  ylab("ASOS temp, C") +
+  facet_wrap(vars(year)) +
+  scale_fill_viridis_d("Year") +
+  theme_bw() +
+  ggtitle("Site: LENO")
+
+
+
+# 42J near OSBS
+osbs_additional <- riem_measures(station = "42J",
+                                 date_start = "2014-04-13",
+                                 date_end = "2020-07-12")
+ 
+osbs_prop_na <- osbs_additional %>%
+  add_count(year = year(valid), day = yday(valid)) %>%
+  group_by(year, day) %>%
+  summarize(total_n = unique(n),
+            non_na_count = sum(!is.na(tmpf)),
+            prop_na = round(((total_n - non_na_count) / total_n),
+                            digits = 2)) %>%
+  select(year, day, total_n, prop_na)
+
+# Aggregate data to day level
+osbs_agg <- osbs_additional %>%
+  group_by(year = year(valid), day = yday(valid)) %>%
+  summarize(mean_tmpf = mean(tmpf, na.rm = TRUE),
+            min_tmpf = min(tmpf, na.rm = TRUE),
+            max_tmpf = max(tmpf, na.rm = TRUE)) %>%
+  transmute(year,
+            day,
+            mean_temp_c = conv_unit(mean_tmpf, from = "F", to = "C"),
+            min_temp_c = conv_unit(min_tmpf, from = "F", to = "C"),
+            max_temp_c = conv_unit(max_tmpf, from = "F", to = "C")) %>%
+  ungroup()
+
+# Join aggregated data with NA proportions
+osbs_output <- left_join(
+  x = osbs_agg,
+  y = osbs_prop_na,
+  by = c("year", "day")) %>%
+  mutate(
+    # Tag with site ID
+    site_id = "osbs",
+    date = (ymd(paste0(year, "-01-01")) + day) - 1) %>%
+  # Rearrange for easier reading
+  select(site_id, year, day, date, total_n, prop_na, everything()) %>%
+  arrange(date)
+
+inner_join(x = temp_compiled,
+           y = osbs_output,
+           by = c("site" = "site_id", "date", "year", "day"),
+           suffix = c("_full", "_osbs")) %>%
+  ggplot() +
+  geom_point(
+    aes(x = mean_temp_c_full, y = mean_temp_c_osbs, fill = as.factor(year)),
+    color = "black", shape = 21) +
+  xlab("NEON temp, C") +
+  ylab("ASOS temp, C") +
+  facet_wrap(vars(year)) +
+  scale_fill_viridis_d("Year") +
+  theme_bw() +
+  ggtitle("Site: OSBS")
+
+
+# FRR near SCBI
+scbi_additional <- riem_measures(station = "FRR",
+                                 date_start = "2014-06-08",
+                                 date_end = "2020-10-04")
+
+scbi_prop_na <- scbi_additional %>%
+  add_count(year = year(valid), day = yday(valid)) %>%
+  group_by(year, day) %>%
+  summarize(total_n = unique(n),
+            non_na_count = sum(!is.na(tmpf)),
+            prop_na = round(((total_n - non_na_count) / total_n),
+                            digits = 2)) %>%
+  select(year, day, total_n, prop_na)
+
+# Aggregate data to day level
+scbi_agg <- scbi_additional %>%
+  group_by(year = year(valid), day = yday(valid)) %>%
+  summarize(mean_tmpf = mean(tmpf, na.rm = TRUE),
+            min_tmpf = min(tmpf, na.rm = TRUE),
+            max_tmpf = max(tmpf, na.rm = TRUE)) %>%
+  transmute(year,
+            day,
+            mean_temp_c = conv_unit(mean_tmpf, from = "F", to = "C"),
+            min_temp_c = conv_unit(min_tmpf, from = "F", to = "C"),
+            max_temp_c = conv_unit(max_tmpf, from = "F", to = "C")) %>%
+  ungroup()
+
+# Join aggregated data with NA proportions
+scbi_output <- left_join(
+  x = scbi_agg,
+  y = scbi_prop_na,
+  by = c("year", "day")) %>%
+  mutate(
+    # Tag with site ID
+    site_id = "scbi",
+    date = (ymd(paste0(year, "-01-01")) + day) - 1) %>%
+  # Rearrange for easier reading
+  select(site_id, year, day, date, total_n, prop_na, everything()) %>%
+  arrange(date)
+
+inner_join(x = temp_compiled,
+           y = scbi_output,
+           by = c("site" = "site_id", "date", "year", "day"),
+           suffix = c("_full", "_scbi")) %>%
+  ggplot() +
+  geom_point(
+    aes(x = mean_temp_c_full, y = mean_temp_c_scbi, fill = as.factor(year)),
+    color = "black", shape = 21) +
+  geom_abline(slope = 1, intercept = 0, linetype = "dashed") +
+  xlab("NEON temp, C") +
+  ylab("ASOS temp, C") +
+  facet_wrap(vars(year)) +
+  scale_fill_viridis_d("Year") +
+  theme_bw() +
+  ggtitle("Site: SCBI")
+
+
+# FRR near BLAN
+blan_additional <- riem_measures(station = "FRR",
+                                 date_start = "2015-04-19",
+                                 date_end = "2020-09-13")
+
+blan_prop_na <- blan_additional %>%
+  add_count(year = year(valid), day = yday(valid)) %>%
+  group_by(year, day) %>%
+  summarize(total_n = unique(n),
+            non_na_count = sum(!is.na(tmpf)),
+            prop_na = round(((total_n - non_na_count) / total_n),
+                            digits = 2)) %>%
+  select(year, day, total_n, prop_na)
+
+# Aggregate data to day level
+blan_agg <- blan_additional %>%
+  group_by(year = year(valid), day = yday(valid)) %>%
+  summarize(mean_tmpf = mean(tmpf, na.rm = TRUE),
+            min_tmpf = min(tmpf, na.rm = TRUE),
+            max_tmpf = max(tmpf, na.rm = TRUE)) %>%
+  transmute(year,
+            day,
+            mean_temp_c = conv_unit(mean_tmpf, from = "F", to = "C"),
+            min_temp_c = conv_unit(min_tmpf, from = "F", to = "C"),
+            max_temp_c = conv_unit(max_tmpf, from = "F", to = "C")) %>%
+  ungroup()
+
+# Join aggregated data with NA proportions
+blan_output <- left_join(
+  x = blan_agg,
+  y = blan_prop_na,
+  by = c("year", "day")) %>%
+  mutate(
+    # Tag with site ID
+    site_id = "blan",
+    date = (ymd(paste0(year, "-01-01")) + day) - 1) %>%
+  # Rearrange for easier reading
+  select(site_id, year, day, date, total_n, prop_na, everything()) %>%
+  arrange(date)
+
+inner_join(x = temp_compiled,
+           y = blan_output,
+           by = c("site" = "site_id", "date", "year", "day"),
+           suffix = c("_full", "_blan")) %>%
+  ggplot() +
+  geom_point(
+    aes(x = mean_temp_c_full, y = mean_temp_c_blan, fill = as.factor(year)),
+    color = "black", shape = 21) +
+  xlab("NEON temp, C") +
+  ylab("ASOS temp, C") +
+  facet_wrap(vars(year)) +
+  scale_fill_viridis_d("Year") +
+  theme_bw() +
+  ggtitle("Site: BLAN")
+
+
+# NAK kind of near SERC (Not very close)
+serc_additional <- riem_measures(station = "NAK",
+                                 date_start = "2015-05-03",
+                                 date_end = "2020-09-20")
+
+serc_prop_na <- serc_additional %>%
+  add_count(year = year(valid), day = yday(valid)) %>%
+  group_by(year, day) %>%
+  summarize(total_n = unique(n),
+            non_na_count = sum(!is.na(tmpf)),
+            prop_na = round(((total_n - non_na_count) / total_n),
+                            digits = 2)) %>%
+  select(year, day, total_n, prop_na)
+
+# Aggregate data to day level
+serc_agg <- serc_additional %>%
+  group_by(year = year(valid), day = yday(valid)) %>%
+  summarize(mean_tmpf = mean(tmpf, na.rm = TRUE),
+            min_tmpf = min(tmpf, na.rm = TRUE),
+            max_tmpf = max(tmpf, na.rm = TRUE)) %>%
+  transmute(year,
+            day,
+            mean_temp_c = conv_unit(mean_tmpf, from = "F", to = "C"),
+            min_temp_c = conv_unit(min_tmpf, from = "F", to = "C"),
+            max_temp_c = conv_unit(max_tmpf, from = "F", to = "C")) %>%
+  ungroup()
+
+# Join aggregated data with NA proportions
+serc_output <- left_join(
+  x = serc_agg,
+  y = serc_prop_na,
+  by = c("year", "day")) %>%
+  mutate(
+    # Tag with site ID
+    site_id = "serc",
+    date = (ymd(paste0(year, "-01-01")) + day) - 1) %>%
+  # Rearrange for easier reading
+  select(site_id, year, day, date, total_n, prop_na, everything()) %>%
+  arrange(date)
+
+inner_join(x = temp_compiled,
+           y = serc_output,
+           by = c("site" = "site_id", "date", "year", "day"),
+           suffix = c("_full", "_serc")) %>%
+  ggplot() +
+  geom_point(
+    aes(x = mean_temp_c_full, y = mean_temp_c_serc, fill = as.factor(year)),
+    color = "black", shape = 21) +
+  xlab("NEON temp, C") +
+  ylab("ASOS temp, C") +
+  facet_wrap(vars(year)) +
+  scale_fill_viridis_d("Year") +
+  theme_bw() +
+  ggtitle("Site: SERC")
 
