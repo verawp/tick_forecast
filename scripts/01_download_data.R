@@ -1,4 +1,4 @@
-# Download and clean tick data: Adapted from https://github.com/eco4cast/neon4cast-ticks/blob/master/02_ticks_targets.R
+# Download tick and weather data: Tick section adapted from https://github.com/eco4cast/neon4cast-ticks/blob/master/02_ticks_targets.R
 # on 2022-02-10 by MRB
 
 # Check for neonstore package and install if needed
@@ -14,6 +14,9 @@ library(MMWRweek) # for converting from date to MMWR week
 library(neonstore)
 library(riem)
 library(measurements)
+
+
+# 1. Download and clean tick data -----------------------------------------
 
 # Select target species and life stage
 target_species <- "Amblyomma americanum"
@@ -126,11 +129,13 @@ write_csv(tick_targets,
           file = "data/ticks_target.csv")
 
 
-# Weather data from NEON --------------------------------------------------
+# 2. Download and process NEON weather data -------------------------------
 
-# Download steps take an hour or more total
+# Note: download steps take an hour or more total
 
-# SAAT: Single aspirated air temperature
+
+# 2.1 SAAT: Single aspirated air temperature ------------------------------
+
 neon_download(product = "DP1.00002.001",
               site = target_sites)
 
@@ -221,6 +226,8 @@ write_csv(x = temp_compiled,
           file = "data/neon_temp_compiled.csv")
 
 
+# 2.2 RH: Relative humidity -----------------------------------------------
+
 # Relative humidity
 neon_download(product = "DP1.00098.001",
               site = target_sites)
@@ -308,6 +315,8 @@ write_csv(x = rh_compiled,
           file = "data/neon_rh_compiled.csv")
 
 
+# 2.3 THRPRE: Throughfall precipitation -----------------------------------
+
 # Precip
 neon_download(product = "DP1.00006.001",
               site = target_sites)
@@ -392,73 +401,32 @@ write_csv(x = precip_compiled,
           file = "data/neon_precip_compiled.csv")
 
 
-# Combine the weather datasets with the tick target data
+# 3. External (non-NEON) weather data downloads ---------------------------
 
-tick_targets
-temp_compiled
-rh_compiled
-precip_compiled
+# A review of the NEON weather data shows that there's a fair amount of gaps.
+# See script 02_clean_and_manage_data.R to see how many gaps there are in the
+# combined NEON tick & weather output.
+# Because of the gaps we'll want some external weather data sources, which I
+# pull below
 
-# Vector of final columns that will need some values turned into NAs again
-cols_to_fix <- c("mean_temp", "min_temp", "max_temp", "mean_var_temp",
-                 "mean_rh_pct", "min_rh_pct", "max_rh_pct", "mean_var_rh",
-                 "sum_precip_mm")
-
-full_dataset <- reduce(.x = list(
-  tick_targets,
-  temp_compiled %>%
-    rename(prop_na_temp = prop_na) %>%
-    group_by(site_id = site, year, mmwr_week = epiweek(date)) %>%
-    summarize(site_id = toupper(site_id),
-              mean_temp = mean(mean_temp_c, na.rm = TRUE),
-              min_temp = min(min_temp_c, na.rm = TRUE),
-              max_temp = max(max_temp_c, na.rm = TRUE),
-              mean_var_temp = mean(mean_var_temp, na.rm = TRUE)) %>%
-    ungroup(),
-  rh_compiled %>%
-    rename(prop_na_rh = prop_na) %>%
-    group_by(site_id = site, year, mmwr_week = epiweek(date)) %>%
-    summarize(site_id = toupper(site_id),
-              mean_rh_pct = mean(mean_rh_pct, na.rm = TRUE),
-              min_rh_pct = min(min_rh_pct, na.rm = TRUE),
-              max_rh_pct = max(max_rh_pct, na.rm = TRUE),
-              mean_var_rh = mean(mean_var_rh, na.rm = TRUE)),
-  precip_compiled %>%
-    rename(prop_na_precip = prop_na) %>%
-    group_by(site_id = site, year, mmwr_week = epiweek(date)) %>%
-    summarize(site_id = toupper(site_id),
-              sum_precip_mm = sum(sum_precip_mm, na.rm = TRUE))),
-  .f = left_join,
-  by = c("site_id", "year", "mmwr_week")) %>%
-  mutate(# Replace Infinite values and NaN with NAs
-    across(.cols = cols_to_fix,
-           .fns =  ~na_if(., Inf)),
-    across(.cols = cols_to_fix,
-           .fns =  ~na_if(., -Inf)),
-    across(.cols = cols_to_fix,
-           .fns = ~if_else(condition = is.nan(.),
-                           true = NA_real_,
-                           false = .))) %>%
-  distinct()
-
-write_csv(x = full_dataset,
-          file = "data/ticks_with_weather.csv")
-
-
-# Additional weather data -------------------------------------------------
-
-full_dataset %>%
-  group_by(site_id) %>%
-  summarize(min_date = min(time),
-            max_date = max(time))
-
+# Our sites:
 neon_sites <- read_csv(file = "data/Ticks_NEON_Field_Site_Metadata_20210928.csv") %>%
   select(field_domain_id, field_site_id, field_site_name, field_site_state,
          field_latitude, field_longitude) 
 
+# Note: I went ahead and looked up the start/end dates of samples for each of
+# the sites in the dataset. I'm going to (for now) retrieve weather data
+# as early as the September before sampling started so that we have some
+# info covering the winter before sampling started
+
+temp_compiled <- read_csv(file = "data/neon_temp_compiled.csv")
+
+
+# 3.1 RIEM temperatures ---------------------------------------------------
+
 # MHK near KONZ
 konz_additional <- riem_measures(station = "MHK",
-                                 date_start = "2015-06-28",
+                                 date_start = "2014-09-01",
                                  date_end = "2020-09-20")
 
 konz_prop_na <- konz_additional %>%
@@ -519,9 +487,9 @@ inner_join(x = temp_compiled,
 
 # LWC near UKFS
 ukfs_additional <- riem_measures(station = "LWC",
-                                 date_start = "2015-07-12",
+                                 date_start = "2014-09-01",
                                  date_end = "2020-09-27")
- 
+
 ukfs_prop_na <- ukfs_additional %>%
   add_count(year = year(valid), day = yday(valid)) %>%
   group_by(year, day) %>%
@@ -576,9 +544,9 @@ inner_join(x = temp_compiled,
 
 # OQT near ORNL
 ornl_additional <- riem_measures(station = "OQT",
-                                 date_start = "2014-06-22",
+                                 date_start = "2013-09-01",
                                  date_end = "2020-09-06")
- 
+
 ornl_prop_na <- ornl_additional %>%
   add_count(year = year(valid), day = yday(valid)) %>%
   group_by(year, day) %>%
@@ -633,9 +601,9 @@ inner_join(x = temp_compiled,
 
 # TCL near TALL
 tall_additional <- riem_measures(station = "TCL",
-                                 date_start = "2014-05-25",
+                                 date_start = "2013-09-01",
                                  date_end = "2020-09-20")
- 
+
 tall_prop_na <- tall_additional %>%
   add_count(year = year(valid), day = yday(valid)) %>%
   group_by(year, day) %>%
@@ -690,9 +658,9 @@ inner_join(x = temp_compiled,
 
 # DYA kind of near LENO
 leno_additional <- riem_measures(station = "DYA",
-                                 date_start = "2016-05-29",
+                                 date_start = "2015-09-01",
                                  date_end = "2019-08-04")
- 
+
 leno_prop_na <- leno_additional %>%
   add_count(year = year(valid), day = yday(valid)) %>%
   group_by(year, day) %>%
@@ -747,9 +715,9 @@ inner_join(x = temp_compiled,
 
 # 42J near OSBS
 osbs_additional <- riem_measures(station = "42J",
-                                 date_start = "2014-04-13",
+                                 date_start = "2013-09-01",
                                  date_end = "2020-07-12")
- 
+
 osbs_prop_na <- osbs_additional %>%
   add_count(year = year(valid), day = yday(valid)) %>%
   group_by(year, day) %>%
@@ -803,7 +771,7 @@ inner_join(x = temp_compiled,
 
 # FRR near SCBI
 scbi_additional <- riem_measures(station = "FRR",
-                                 date_start = "2014-06-08",
+                                 date_start = "2013-09-01",
                                  date_end = "2020-10-04")
 
 scbi_prop_na <- scbi_additional %>%
@@ -860,7 +828,7 @@ inner_join(x = temp_compiled,
 
 # FRR near BLAN
 blan_additional <- riem_measures(station = "FRR",
-                                 date_start = "2015-04-19",
+                                 date_start = "2014-09-01",
                                  date_end = "2020-09-13")
 
 blan_prop_na <- blan_additional %>%
@@ -916,7 +884,7 @@ inner_join(x = temp_compiled,
 
 # NAK kind of near SERC (Not very close)
 serc_additional <- riem_measures(station = "NAK",
-                                 date_start = "2015-05-03",
+                                 date_start = "2014-09-01",
                                  date_end = "2020-09-20")
 
 serc_prop_na <- serc_additional %>%
@@ -968,4 +936,18 @@ inner_join(x = temp_compiled,
   scale_fill_viridis_d("Year") +
   theme_bw() +
   ggtitle("Site: SERC")
+
+
+# Combine the RIEM weather data pulls for all plots
+full_riem <- reduce(.x = list(blan_output, konz_output, leno_output, ornl_output,
+                              osbs_output, scbi_output, serc_output, tall_output,
+                              ukfs_output),
+                    .f = bind_rows)
+
+write_csv(x = full_riem,
+          file = "data/temperature_from_riem.csv")
+
+
+
+
 
