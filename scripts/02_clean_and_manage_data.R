@@ -39,7 +39,8 @@ full_dataset <- reduce(.x = list(
     rename(prop_na_precip = prop_na) %>%
     group_by(site_id = site, year, mmwr_week = epiweek(date)) %>%
     summarize(site_id = toupper(site_id),
-              sum_precip_mm = sum(sum_precip_mm, na.rm = TRUE))),
+              sum_precip_mm = sum(sum_precip_mm, na.rm = TRUE),
+              precip_type = unique(precip_type))),
   .f = full_join,
   by = c("site_id", "year", "mmwr_week")) %>%
   mutate(
@@ -255,7 +256,7 @@ ggplot(data = tick_neon_riem_clean) +
   scale_shape_identity("", guide = "legend", breaks = 4, labels = "NA data for precip") +
   xlab("Date") +
   ylab("Precip, mm") +
-  facet_wrap(vars(site_id), scales = "free", ncol = 2) +
+  facet_wrap(vars(site_id), scales = "free", nrow = 2) +
   theme_bw() +
   theme(legend.position = "bottom",
         axis.title = element_text(size = 12),

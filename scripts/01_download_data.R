@@ -129,7 +129,7 @@ write_csv(tick_targets,
           file = "data/ticks_target.csv")
 
 
-# 2. Download and process NEON weather data -------------------------------
+# 2. Download and process NEON  data --------------------------------------
 
 # Note: download steps take an hour or more total
 
@@ -315,50 +315,79 @@ write_csv(x = rh_compiled,
           file = "data/neon_rh_compiled.csv")
 
 
-# 2.3 THRPRE: Throughfall precipitation -----------------------------------
+# 2.3 PRIPRE: Primary precipitation ---------------------------------------
 
 # Precip
 neon_download(product = "DP1.00006.001",
               site = target_sites)
 
-# Combine and export
+# Combine and export. Different sites may have different available precipitation
+# types
 walk(.x = target_sites,
      .f = ~ {
        
-       temp_df <- neon_read(table = "THRPRE_30min-basic", site = .x)
+       # First try retrieving primary precip
+       pri_df <- neon_read(table = "PRIPRE_30min-basic", site = .x)
+
+       # If primary is NULL, try secondary
+       if (is.null(pri_df)) {
+         
+         sec_df <- neon_read(table = "SECPRE_30min-basic", site = .x)
+
+         # If secondary is NULL, try throughfall
+         if (is.null(sec_df)) {
+           
+           # Keep throughfall data and mark it
+           precip_df <- neon_read(table = "THRPRE_30min-basic", site = .x) %>%
+             mutate(precip_type = "THRPRE")
+           
+           # If secondary is not NULL, keep it and mark it
+         } else {
+           
+           precip_df <- sec_df %>%
+             mutate(precip_type = "SECPRE")
+           
+         }
+         # If primary is not NULL, keep it and mark it
+       } else {
+         
+         precip_df <- pri_df %>%
+           mutate(precip_type = "PRIPRE")
+         
+       }
        
-       write_rds(x = temp_df,
-                 file = paste0("data/high_temporal_res/", tolower(.x), "_30min_thrpre.rds"))
-       
+       # Write the resulting data out to csv
+       write_rds(x = precip_df,
+                 file = paste0("data/high_temporal_res/", tolower(.x), "_30min_precip.rds"))
      })
 
 # Take a look at a single dataset for insight:
-# There's only one vertical position
-read_rds("data/high_temporal_res/blan_30min_thrpre.rds") %>%
-  pull(verticalPosition) %>%
-  unique()
+read_rds("data/high_temporal_res/blan_30min_precip.rds")
 
 # Compile all precip datasets into one data frame
 precip_compiled <- map_df(.x = list.files(path = "data/high_temporal_res/",
-                                          pattern = "30min_thrpre.rds",
+                                          pattern = "30min_precip.rds",
                                           full.names = TRUE),
                           .f = ~ {
                             
                             # Keep the site ID for later use
-                            site_id <- gsub(pattern = "data/high_temporal_res/|_30min_thrpre.rds",
+                            site_id <- gsub(pattern = "data/high_temporal_res/|_30min_precip.rds",
                                             replacement = "",
                                             x = .x)
                             
-                            # Read in data and filter for the lowest tier of the tower
+                            # Read in data
                             precip_data <- read_rds(.x) %>%
-                              filter(verticalPosition == "000")
+                              # Different measurement column names based on site;
+                              # rename so that they can be used agnostically
+                              rename(precip_bulk = matches("PrecipBulk"))
+                            
                             
                             # Get proportion of each day's bulk records that are NA values
                             prop_na <- precip_data %>%
                               add_count(year = year(startDateTime), day = yday(startDateTime)) %>%
                               group_by(year, day) %>%
                               summarize(total_n = unique(n),
-                                        non_na_count = sum(!is.na(TFPrecipBulk)),
+                                        non_na_count = sum(!is.na(precip_bulk)),
                                         prop_na = round(((total_n - non_na_count) / total_n),
                                                         digits = 2)) %>%
                               select(year, day, total_n, prop_na)
@@ -366,7 +395,8 @@ precip_compiled <- map_df(.x = list.files(path = "data/high_temporal_res/",
                             # Aggregate data to day level
                             agg_data <- precip_data %>%
                               group_by(year = year(startDateTime), day = yday(startDateTime)) %>%
-                              summarize(sum_precip_mm= sum(TFPrecipBulk, na.rm = TRUE)) %>%
+                              summarize(sum_precip_mm = sum(precip_bulk, na.rm = TRUE),
+                                        precip_type = unique(precip_type)) %>%
                               ungroup()
                             
                             # Join aggregated data with NA proportions
@@ -401,6 +431,100 @@ write_csv(x = precip_compiled,
           file = "data/neon_precip_compiled.csv")
 
 
+# 2.4 Small mammal trapping -----------------------------------------------
+
+# Small mammal box trapping
+neon_download(product = "DP1.10072.001",
+              site = target_sites)
+
+# Combine and export
+walk(.x = target_sites,
+     .f = ~ {
+       temp_df <- neon_read(table = "mam_pertrapnight", site = .x)
+       
+       write_rds(x = temp_df,
+                 file = paste0("data/high_temporal_res/", tolower(.x), "_small_mammal.rds"))
+     })
+
+# Take a look at a single dataset for insight:
+read_rds("data/high_temporal_res/blan_small_mammal.rds")
+
+
+# Compile all mammal datasets into one data frame
+mammal_daily_compiled <- map_df(.x = list.files(path = "data/high_temporal_res/",
+                                                pattern = "small_mammal.rds",
+                                                full.names = TRUE),
+                                .f = ~ {
+                                  
+                                  # Keep the site ID for later use
+                                  site_id <- gsub(pattern = "data/high_temporal_res/|_small_mammal.rds",
+                                                  replacement = "",
+                                                  x = .x)
+                                  
+                                  # Read in data and select the most helpful cols
+                                  small_mammal <- read_rds(.x) %>%
+                                    select(siteID, plotID, trapCoordinate, plotType,
+                                           nlcdClass, trapStatus, collectDate,
+                                           lifeStage, taxonID, scientificName,
+                                           taxonRank, contains("ticks"))
+                                  
+                                  mammal_success <- small_mammal %>%
+                                    # Something captured
+                                    filter(trapStatus %in% c("4 - more than 1 capture in one trap",
+                                                             "5 - capture"))
+                                  
+                                  # Return to the outer function
+                                  return(mammal_success)
+                                  
+                                }) 
+
+# Export the final temp dataset
+write_csv(x = mammal_daily_compiled,
+          file = "data/neon_mammals_daily_compiled.csv")
+
+mammal_larval_ticks <- mammal_daily_compiled %>%
+  add_count(year = year(collectDate), mmwr_week = epiweek(collectDate), siteID,
+            lifeStage, scientificName,
+            larvalTicksAttached, name = "ind_w_larval_ticks") %>%
+  filter(larvalTicksAttached == "Y") %>%
+  select(year, mmwr_week, siteID, lifeStage, scientificName, ind_w_larval_ticks) %>%
+  distinct()
+
+mammal_nymphal_ticks <- mammal_daily_compiled %>%
+  add_count(year = year(collectDate), mmwr_week = epiweek(collectDate), siteID,
+            lifeStage, scientificName,
+            nymphalTicksAttached, name = "ind_w_nymphal_ticks") %>%
+  filter(nymphalTicksAttached == "Y") %>%
+  select(year, mmwr_week, siteID, lifeStage, scientificName, ind_w_nymphal_ticks) %>%
+  distinct()
+
+mammal_adult_ticks <- mammal_daily_compiled %>%
+  add_count(year = year(collectDate), mmwr_week = epiweek(collectDate), siteID,
+            lifeStage, scientificName,
+            adultTicksAttached, name = "ind_w_adult_ticks") %>%
+  filter(adultTicksAttached == "Y") %>%
+  select(year, mmwr_week, siteID, lifeStage, scientificName, ind_w_adult_ticks) %>%
+  distinct()
+
+mammal_ticks <- reduce(.x = list(mammal_larval_ticks, mammal_nymphal_ticks, mammal_adult_ticks),
+                       .f = full_join,
+                       by = c("year", "mmwr_week", "siteID", "lifeStage", "scientificName"))
+
+mammal_counts <- mammal_daily_compiled %>%
+  count(year = year(collectDate), mmwr_week = epiweek(collectDate),
+        siteID, lifeStage, scientificName)
+
+mammals_weekly <- full_join(x = mammal_counts,
+                            y = mammal_ticks,
+                            by = c("year", "mmwr_week", "siteID", "lifeStage", "scientificName")) %>%
+  mutate(across(.cols = c(n, ind_w_larval_ticks, ind_w_nymphal_ticks, ind_w_adult_ticks),
+                .fns = ~replace_na(data = ., replace = 0)))
+
+# Export the final temp dataset
+write_csv(x = mammals_weekly,
+          file = "data/neon_mammals_weekly_compiled.csv")
+
+
 # 3. External (non-NEON) weather data downloads ---------------------------
 
 # A review of the NEON weather data shows that there's a fair amount of gaps.
@@ -420,6 +544,7 @@ neon_sites <- read_csv(file = "data/Ticks_NEON_Field_Site_Metadata_20210928.csv"
 # info covering the winter before sampling started
 
 temp_compiled <- read_csv(file = "data/neon_temp_compiled.csv")
+precip_compiled <- read_csv(file = "data/neon_precip_compiled.csv")
 
 
 # 3.1 RIEM temperatures ---------------------------------------------------
@@ -948,6 +1073,58 @@ write_csv(x = full_riem,
           file = "data/temperature_from_riem.csv")
 
 
+# 3.2 RIEM Precipitation --------------------------------------------------
 
+# Exploring this idea for now, but not pursuing in full
 
+# MHK near KONZ
+
+# The ASOS data are a little more difficult to aggregate
+# Quoting riem::riem_measures() -- "One hour precipitation for the period from
+# the observation time to the time of the previous hourly precipitation reset.
+# This varies slightly by site."
+# Help with this from https://github.com/rmcd1024/daily_precipitation_totals
+konz_precip <- konz_additional %>% 
+  filter(!is.na(p01i)) %>% 
+  select(station, valid, p01i) %>% 
+  mutate(date = with_tz(as.POSIXct(valid, tz ='UCT'),
+                        "America/New_York"),
+         date = date - dst(date)*3600,
+         year = year(date),
+         month = month(date),
+         day = day(date),
+         hour = hour(date),
+         minute = minute(date)) %>% 
+  group_by(year, month, day, hour) 
+
+modalminute <- konz_precip %>%
+  arrange(desc(minute), .by_group = TRUE) %>% 
+  mutate(maxminute = minute[which.max(p01i)]) %>% 
+  {which.max(tabulate(.$maxminute))}
+
+konz_precip_day <- konz_precip %>% 
+  filter(minute <= modalminute) %>% 
+  summarize(hourlyprecip = max(p01i, na.rm = TRUE)) %>% 
+  group_by(year, month, day) %>% 
+  summarize(sum_precip_mm = sum(hourlyprecip, na.rm = TRUE) * 25.4) %>%
+  ungroup() %>%
+  mutate(site_id = "konz",
+         date = ymd(paste(year, month, day, sep = "-")))
+
+# Hmm...could be worse I guess
+inner_join(x = precip_compiled,
+           y = konz_precip_day,
+           by = c("site" = "site_id", "date", "year", "day"),
+           suffix = c("_full", "_konz")) %>%
+  ggplot() +
+  geom_point(
+    aes(x = sum_precip_mm_full , y = sum_precip_mm_konz, fill = as.factor(year)),
+    color = "black", shape = 21) +
+  geom_abline(slope = 1, intercept = 0, linetype = "dashed") +
+  xlab("NEON precip, mm") +
+  ylab("ASOS precip, mm") +
+  facet_wrap(vars(year)) +
+  scale_fill_viridis_d("Year") +
+  theme_bw() +
+  ggtitle("Site: KONZ")
 
