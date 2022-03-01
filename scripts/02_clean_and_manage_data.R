@@ -1,6 +1,7 @@
 library(tidyverse)
 library(lubridate)
 library(MMWRweek)
+library(plantecophys)
 
 
 # 1. Combine NEON tick and NEON weather data ------------------------------
@@ -10,6 +11,8 @@ tick_targets <- read_csv(file = "data/ticks_target.csv")
 temp_compiled <- read_csv(file = "data/neon_temp_compiled.csv")
 rh_compiled <- read_csv(file = "data/neon_rh_compiled.csv")
 precip_compiled <- read_csv(file = "data/neon_precip_compiled.csv")
+vpd_min_prism <- read_rds(file = "data/vpd_min_prism.rds")
+vpd_max_prism <- read_rds(file = "data/vpd_max_prism.rds")
 
 # Vector of final columns that will need some values turned into NAs again
 cols_to_fix <- c("mean_temp", "min_temp", "max_temp", "mean_var_temp",
@@ -192,11 +195,6 @@ tick_neon_riem_clean <- tick_neon_riem %>%
       (site_id == "UKFS" & time %within% ukfs_limits)) %>%
   arrange(site_id, time) 
 
-# Export for external use
-write_csv(x = tick_neon_riem_clean,
-          file = "data/ticks_with_filled_weather.csv")
-
-
 
 # Anything weird happening with these different sources?
 ggplot(data = tick_neon_riem_clean %>%
@@ -221,7 +219,39 @@ ggplot(data = tick_neon_riem_clean %>%
 # Note that SCBI seems to have some inaccurate data in early 2019...
 
 
-# 3. Assess coverage of non-temp vars -------------------------------------
+# 3. Calculate air VPD ----------------------------------------------------
+
+# Calculate VPD using existing NEON RH values
+full_dataset_w_vpd <- tick_neon_riem_clean %>%
+  mutate(min_air_vpd = RHtoVPD(RH = min_rh_pct, TdegC = min_temp),
+         mean_air_vpd = RHtoVPD(RH = mean_rh_pct, TdegC = mean_temp),
+         max_air_vpd = RHtoVPD(RH = max_rh_pct, TdegC = max_temp))
+
+
+# Export for external use
+write_csv(x = full_dataset_w_vpd,
+          file = "data/ticks_with_filled_weather.csv")
+
+
+
+# Well...could be better
+full_join(x = full_dataset_w_vpd,
+          y = vpd_min_prism %>%
+            rename(site_id = field_site_id) %>%
+            group_by(site_id, year = year(date), mmwr_week = epiweek(date)) %>%
+            summarize(min_vpd = min(vpd_min, na.rm = TRUE)),
+          by = c("site_id", "year", "mmwr_week")) %>%
+  ggplot() +
+  geom_point(aes(x = min_air_vpd, y = min_vpd)) +
+  geom_abline(slope = 1, intercept = 0) +
+  facet_wrap(vars(site_id)) +
+  xlim(c(0, 4)) +
+  ylim(c(0, 4)) +
+  xlab("Manual VPD, min.") +
+  ylab("PRISM VPD, min")
+
+
+# 4. Assess coverage of non-temp vars -------------------------------------
 
 # What's RH coverage looking like?
 ggplot(data = tick_neon_riem_clean) +

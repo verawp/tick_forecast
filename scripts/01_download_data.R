@@ -14,6 +14,8 @@ library(MMWRweek) # for converting from date to MMWR week
 library(neonstore)
 library(riem)
 library(measurements)
+library(prism)
+library(sf)
 
 
 # 1. Download and clean tick data -----------------------------------------
@@ -328,12 +330,12 @@ walk(.x = target_sites,
        
        # First try retrieving primary precip
        pri_df <- neon_read(table = "PRIPRE_30min-basic", site = .x)
-
+       
        # If primary is NULL, try secondary
        if (is.null(pri_df)) {
          
          sec_df <- neon_read(table = "SECPRE_30min-basic", site = .x)
-
+         
          # If secondary is NULL, try throughfall
          if (is.null(sec_df)) {
            
@@ -1127,4 +1129,88 @@ inner_join(x = precip_compiled,
   scale_fill_viridis_d("Year") +
   theme_bw() +
   ggtitle("Site: KONZ")
+
+
+# 3.3 PRISM VPD -----------------------------------------------------------
+
+# Download PRISM min/max vapor pressure deficit in bulk
+
+prism_set_dl_dir(path = "data/prism/")
+
+# Minimum Vapor Pressure Deficit
+get_prism_dailys(type = "vpdmin",
+                 minDate = "2013-01-01",
+                 maxDate = "2021-12-31")
+
+# Maximum Vapor Pressure Deficit
+get_prism_dailys(type = "vpdmax",
+                 minDate = "2013-01-01",
+                 maxDate = "2021-12-31")
+
+neon_sites_sf <- neon_sites %>%
+  select(field_domain_id, field_site_id, field_site_name, field_site_state,
+         field_latitude, field_longitude) %>%
+  st_as_sf(x = .,
+           coords = c("field_longitude", "field_latitude"),
+           # WGS84
+           crs = 4326)
+
+# Get raster list
+file_archive <- list.files(path = "data/prism", pattern = ".bil$",
+                           recursive = T, full.names = TRUE)
+
+vpdmin_archive <- grep(pattern = "vpdmin", x = file_archive, value = TRUE)
+vpdmax_archive <- grep(pattern = "vpdmax", x = file_archive, value = TRUE)
+
+
+vpd_min <- map_df(.x = vpdmin_archive,
+                  .f = ~ {
+                    
+                    date_stamp <- .x %>%
+                      str_extract(string = ., pattern = "[0-9]{8}_bil.bil") %>%
+                      str_remove(string = ., pattern = "_bil.bil")
+                    
+                    prism_raster <- raster(x = .x)
+                    
+                    vpdmin_vals <- extract(x = prism_raster,
+                                           y = neon_sites_sf)
+                    
+                    out_df <- tibble(neon_sites_sf) %>%
+                      dplyr::select(-geometry) %>%
+                      mutate(date = ymd(date_stamp)) %>%
+                      bind_cols(., vpd_min = vpdmin_vals)
+                    
+                    return(out_df)
+                    
+                  })
+
+write_rds(x = vpd_min,
+          file = "data/vpd_min_prism.rds")
+
+vpd_max <- map_df(.x = vpdmax_archive,
+                  .f = ~ {
+                    
+                    date_stamp <- .x %>%
+                      str_extract(string = ., pattern = "[0-9]{8}_bil.bil") %>%
+                      str_remove(string = ., pattern = "_bil.bil")
+                    
+                    prism_raster <- raster(x = .x)
+                    
+                    vpdmax_vals <- extract(x = prism_raster,
+                                           y = neon_sites_sf)
+                    
+                    out_df <- tibble(neon_sites_sf) %>%
+                      dplyr::select(-geometry) %>%
+                      mutate(date = ymd(date_stamp)) %>%
+                      bind_cols(., vpd_max = vpdmax_vals)
+                    
+                    return(out_df)
+                    
+                  })
+
+write_rds(x = vpd_max,
+          file = "data/vpd_max_prism.rds")
+
+
+
 
