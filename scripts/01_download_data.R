@@ -16,6 +16,7 @@ library(riem)
 library(measurements)
 library(prism)
 library(sf)
+library(raster)
 
 
 # 1. Download and clean tick data -----------------------------------------
@@ -129,6 +130,19 @@ tick_targets <- tick_standard %>%
 # Write targets to csv
 write_csv(tick_targets,
           file = "data/ticks_target.csv")
+
+
+# Get info on non-sampling dates that were dropped earlier:
+# There are lots of reasons why sampling didn't occur (logistics, too wet, too cold, etc.)
+# so, keep records when sampling occurred
+tick_no_field <- tick_field_raw %>% 
+  filter(totalSampledArea <= 0 | is.na(totalSampledArea)) %>% 
+  mutate(time = floor_date(collectDate, unit = "day")) %>% 
+  unite(namedLocation, time, col = "occasionID", sep = "_") %>%
+  select(siteID, nlcdClass, decimalLatitude, decimalLongitude, elevation, totalSampledArea, remarks)
+
+write_csv(x = tick_no_field,
+          file = "data/ticks_missed_sample_dates.csv")
 
 
 # 2. Download and process NEON  data --------------------------------------
@@ -1212,5 +1226,80 @@ write_rds(x = vpd_max,
           file = "data/vpd_max_prism.rds")
 
 
+# 3.4 GridMet RH ----------------------------------------------------------
 
+# We'll use GridMet's RH, see how it matches what we've gotten from NEON,
+# then try out our VPD calculations with it. I've also downloaded VPD
+# from GridMet in case we want to use that
+
+# I've downloaded GridMet .nc (NetCDF) files, from which these values can
+# be pulled
+
+# A function to be used in mapping over NetCDF files to retrieve and format
+# past climate data
+extract_from_brick <- function(brick_file, sites_sf, origin_date, variable){
+  
+  # brick_file = A file to be read in as a raster brick of climate data (gridmet intended)
+  # sites_sf = An sf object containing NEON site locations
+  # origin_date = The origin date of the .nc files being read in, as
+  #               a character string. (e.g., when 'description: days
+  #               since 1900-01-01', then the value would be "1900-01-01")
+  # variable = A character string containing the name of the variable being
+  #            extracted. This is not used to retrieve the variable, just to
+  #            label its column in the output data frame 
+  
+  raster_brick <- raster::brick(x = brick_file)
+  
+  # Ensure that they are in compatible reference systems
+  assert_that(st_crs(raster_brick) == st_crs(sites_sf),
+              msg = "CRS of brick_file != CRS of sites_sf")  
+  
+  raster::extract(raster_brick, sites_sf, method = "simple", df = TRUE) %>%
+    pivot_longer(names_to = "raw_dates", values_to = variable, cols = -"ID") %>%
+    mutate(date = gsub(pattern = "X", replacement = "", x = raw_dates),
+           date = as.numeric(date),
+           date = ymd(origin_date) + days(date),
+           ID = as.character(ID)) %>%
+    left_join(x = .,
+              y = as_tibble(sites_sf) %>%
+                rownames_to_column() %>%
+                dplyr::select(rowname, field_site_id),
+              by = c("ID" = "rowname")) %>%
+    select(field_site_id, date, all_of(variable))
+  
+}
+
+# Iterate over gridmet files and compile daily estimates for each site's
+# location into a data frame
+gridmet_rh_max <- map_df(.x = list.files(path = "data/gridmet/",
+                                         pattern = "rmax_.{4}\\.nc",
+                                         full.names = TRUE),
+                         .f = ~ extract_from_brick(brick_file = .x,
+                                                   sites_sf = neon_sites_sf,
+                                                   origin_date = "1900-01-01",
+                                                   variable = "rh_max"))
+
+gridmet_rh_min <- map_df(.x = list.files(path = "data/gridmet/",
+                                         pattern = "rmin_.{4}\\.nc",
+                                         full.names = TRUE),
+                         .f = ~ extract_from_brick(brick_file = .x,
+                                                   sites_sf = neon_sites_sf,
+                                                   origin_date = "1900-01-01",
+                                                   variable = "rh_min"))
+
+gridmet_vpd <- map_df(.x = list.files(path = "data/gridmet/",
+                                      pattern = "vpd_.{4}\\.nc",
+                                      full.names = TRUE),
+                      .f = ~ extract_from_brick(brick_file = .x,
+                                                sites_sf = neon_sites_sf,
+                                                origin_date = "1900-01-01",
+                                                variable = "vpd"))
+
+# Combine all variables and then export
+full_gridmet <- reduce(.x = list(gridmet_rh_min, gridmet_rh_max, gridmet_vpd),
+                       .f = full_join,
+                       by = c("field_site_id", "date"))
+
+write_csv(x = full_gridmet,
+          file = "data/gridmet_data_compiled.csv")
 

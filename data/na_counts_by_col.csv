@@ -1,0 +1,12 @@
+variable,pct_complete
+amblyomma_americanum,0.12
+sum_precip_mm,0.5
+min_air_vpd,0.72
+mean_air_vpd,0.72
+max_air_vpd,0.72
+mean_temp,0.73
+min_temp,0.73
+max_temp,0.73
+mean_rh_pct,0.97
+min_rh_pct,0.97
+max_rh_pct,0.97

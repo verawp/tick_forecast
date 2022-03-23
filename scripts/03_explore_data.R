@@ -17,7 +17,7 @@ state_shapes <- ne_states(country = "United States of America",
 #                       guess_max = 1e6)
 
 # Tick data with weather attached
-tick_data <- read_csv(file = "data/ticks_with_weather.csv")
+tick_data <- read_csv(file = "data/ticks_with_filled_weather.csv")
 
 # Preview the data
 head(tick_data)
