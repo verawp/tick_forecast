@@ -8,6 +8,7 @@
 ~%2Ftick_forecast%2Fscripts%2F02_explore_data.R="6C09AC9B"
 ~%2Ftick_forecast%2Fscripts%2F03_explore_data.R="9468FE7D"
 ~%2Ftick_forecast%2Fscripts%2F04_time_series.R="036E0725"
+~%2Ftick_forecast%2Fscripts%2Fcalc_degree_days.R="292A7BA7"
 ~%2Ftick_forecast%2Fscripts%2Fcreate_site_map.R="DE67A238"
 ~%2Ftick_forecast%2Fscripts%2Fexplore_data.R="41D0C012"
 ~%2Fticks%2Fscripts%2Fexplore_data.R="4DD8649E"

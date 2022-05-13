@@ -17,6 +17,12 @@ library(measurements)
 library(prism)
 library(sf)
 library(raster)
+library(assertthat)
+
+# Use select from the dplyr package by default
+conflicted::conflict_prefer("select", "dplyr")
+conflicted::conflict_prefer("filter", "dplyr")
+conflicted::conflict_prefer("lag", "dplyr")
 
 
 # 1. Download and clean tick data -----------------------------------------
@@ -568,7 +574,7 @@ precip_compiled <- read_csv(file = "data/neon_precip_compiled.csv")
 # MHK near KONZ
 konz_additional <- riem_measures(station = "MHK",
                                  date_start = "2014-09-01",
-                                 date_end = "2020-09-20")
+                                 date_end = "2020-12-31")
 
 konz_prop_na <- konz_additional %>%
   add_count(year = year(valid), day = yday(valid)) %>%
@@ -629,7 +635,7 @@ inner_join(x = temp_compiled,
 # LWC near UKFS
 ukfs_additional <- riem_measures(station = "LWC",
                                  date_start = "2014-09-01",
-                                 date_end = "2020-09-27")
+                                 date_end = "2020-12-31")
 
 ukfs_prop_na <- ukfs_additional %>%
   add_count(year = year(valid), day = yday(valid)) %>%
@@ -685,8 +691,8 @@ inner_join(x = temp_compiled,
 
 # OQT near ORNL
 ornl_additional <- riem_measures(station = "OQT",
-                                 date_start = "2013-09-01",
-                                 date_end = "2020-09-06")
+                                 date_start = "2013-01-01",
+                                 date_end = "2020-12-31")
 
 ornl_prop_na <- ornl_additional %>%
   add_count(year = year(valid), day = yday(valid)) %>%
@@ -742,8 +748,8 @@ inner_join(x = temp_compiled,
 
 # TCL near TALL
 tall_additional <- riem_measures(station = "TCL",
-                                 date_start = "2013-09-01",
-                                 date_end = "2020-09-20")
+                                 date_start = "2013-01-01",
+                                 date_end = "2020-12-31")
 
 tall_prop_na <- tall_additional %>%
   add_count(year = year(valid), day = yday(valid)) %>%
@@ -799,8 +805,8 @@ inner_join(x = temp_compiled,
 
 # DYA kind of near LENO
 leno_additional <- riem_measures(station = "DYA",
-                                 date_start = "2015-09-01",
-                                 date_end = "2019-08-04")
+                                 date_start = "2015-01-01",
+                                 date_end = "2019-12-31")
 
 leno_prop_na <- leno_additional %>%
   add_count(year = year(valid), day = yday(valid)) %>%
@@ -856,8 +862,8 @@ inner_join(x = temp_compiled,
 
 # 42J near OSBS
 osbs_additional <- riem_measures(station = "42J",
-                                 date_start = "2013-09-01",
-                                 date_end = "2020-07-12")
+                                 date_start = "2013-01-01",
+                                 date_end = "2020-12-31")
 
 osbs_prop_na <- osbs_additional %>%
   add_count(year = year(valid), day = yday(valid)) %>%
@@ -912,8 +918,8 @@ inner_join(x = temp_compiled,
 
 # FRR near SCBI
 scbi_additional <- riem_measures(station = "FRR",
-                                 date_start = "2013-09-01",
-                                 date_end = "2020-10-04")
+                                 date_start = "2013-01-01",
+                                 date_end = "2020-12-31")
 
 scbi_prop_na <- scbi_additional %>%
   add_count(year = year(valid), day = yday(valid)) %>%
@@ -969,8 +975,8 @@ inner_join(x = temp_compiled,
 
 # FRR near BLAN
 blan_additional <- riem_measures(station = "FRR",
-                                 date_start = "2014-09-01",
-                                 date_end = "2020-09-13")
+                                 date_start = "2014-01-01",
+                                 date_end = "2020-12-31")
 
 blan_prop_na <- blan_additional %>%
   add_count(year = year(valid), day = yday(valid)) %>%
@@ -1025,8 +1031,8 @@ inner_join(x = temp_compiled,
 
 # NAK kind of near SERC (Not very close)
 serc_additional <- riem_measures(station = "NAK",
-                                 date_start = "2014-09-01",
-                                 date_end = "2020-09-20")
+                                 date_start = "2014-01-01",
+                                 date_end = "2020-12-31")
 
 serc_prop_na <- serc_additional %>%
   add_count(year = year(valid), day = yday(valid)) %>%
@@ -1105,7 +1111,7 @@ konz_precip <- konz_additional %>%
   select(station, valid, p01i) %>% 
   mutate(date = with_tz(as.POSIXct(valid, tz ='UCT'),
                         "America/New_York"),
-         date = date - dst(date)*3600,
+         date = date - dst(date) * 3600,
          year = year(date),
          month = month(date),
          day = day(date),
@@ -1226,7 +1232,10 @@ write_rds(x = vpd_max,
           file = "data/vpd_max_prism.rds")
 
 
-# 3.4 GridMet RH ----------------------------------------------------------
+# 3.4 GridMet -------------------------------------------------------------
+
+
+# 3.4.1 GridMet RH --------------------------------------------------------
 
 # We'll use GridMet's RH, see how it matches what we've gotten from NEON,
 # then try out our VPD calculations with it. I've also downloaded VPD
@@ -1302,4 +1311,39 @@ full_gridmet <- reduce(.x = list(gridmet_rh_min, gridmet_rh_max, gridmet_vpd),
 
 write_csv(x = full_gridmet,
           file = "data/gridmet_data_compiled.csv")
+
+
+# 3.4.2 GridMet temp ------------------------------------------------------
+
+# Iterate over gridmet files and compile daily estimates for each site's
+# location into a data frame
+gridmet_temp_max <- map_df(.x = list.files(path = "data/gridmet/",
+                                           pattern = "tmmx_.{4}\\.nc",
+                                           full.names = TRUE),
+                           .f = ~ extract_from_brick(brick_file = .x,
+                                                     sites_sf = neon_sites_sf,
+                                                     origin_date = "1900-01-01",
+                                                     variable = "max_temp_k")) %>%
+  mutate(max_temp_c = conv_unit(x = max_temp_k, from = "K", to = "C")) %>%
+  select(-max_temp_k)
+
+gridmet_temp_min <- map_df(.x = list.files(path = "data/gridmet/",
+                                           pattern = "tmmn_.{4}\\.nc",
+                                           full.names = TRUE),
+                           .f = ~ extract_from_brick(brick_file = .x,
+                                                     sites_sf = neon_sites_sf,
+                                                     origin_date = "1900-01-01",
+                                                     variable = "min_temp_k")) %>%
+  mutate(min_temp_c = conv_unit(x = min_temp_k, from = "K", to = "C")) %>%
+  select(-min_temp_k)
+
+
+# Export these separately because they are mainly for a different process
+# than the RH data above
+full_gridmet_temp <- reduce(.x = list(gridmet_temp_min, gridmet_temp_max),
+                       .f = full_join,
+                       by = c("field_site_id", "date"))
+
+write_csv(x = full_gridmet_temp,
+          file = "data/gridmet_temperature_data_compiled.csv")
 

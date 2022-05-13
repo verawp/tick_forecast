@@ -495,3 +495,31 @@ weeks_between %>%
   xlab("Number of weeks since last non-NA tick value") +
   ylab("Frequency")
 
+
+# 6. Incorporate degree days ----------------------------------------------
+
+# The degree day calculations are made in calc_degree_days.R
+dd_aggregations <- read_csv(file = "data/daily_dd_calcs.csv")
+
+# Column defs:
+# thirty_day_dd: The 30-day sum of DDs
+# cume_dd: The cumulative sum of DDs since Jan 01
+
+# NOTE: The temp_source column in tick_neon_vpd_fill won't match the one in
+# the degree day dataset because I had to use GridMet to backfill additional
+# values
+tick_join_dd <- left_join(x = tick_neon_vpd_fill,
+                          y = dd_aggregations %>%
+                            mutate(mmwr_week = epiweek(date),
+                                   day_num = yday(date)) %>%
+                            select(-temp_source),
+                          by = c("site_id", "year", "time" = "date",
+                                 "day_num", "mmwr_week"))
+
+summary(tick_join_dd)
+
+
+# Export for external use
+write_csv(x = tick_join_dd,
+          file = "data/ticks_with_filled_weather.csv")
+

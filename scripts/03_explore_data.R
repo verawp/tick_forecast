@@ -28,7 +28,7 @@ head(tick_data)
 correlations <- tick_data %>%
   select(amblyomma_americanum, mean_temp, min_temp, max_temp, mean_var_temp,
          mean_rh_pct, min_rh_pct, max_rh_pct) %>%
-  cor(use = "pairwise.complete.obs")
+  cor(use = "complete.obs")
 
 corrplot(corr = correlations, type = "upper")
 
