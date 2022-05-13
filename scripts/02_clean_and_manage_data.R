@@ -503,6 +503,7 @@ dd_aggregations <- read_csv(file = "data/daily_dd_calcs.csv")
 
 # Column defs:
 # thirty_day_dd: The 30-day sum of DDs
+# lag_thirty_day_dd: Same as above, but lagged one day
 # cume_dd: The cumulative sum of DDs since Jan 01
 
 # NOTE: The temp_source column in tick_neon_vpd_fill won't match the one in

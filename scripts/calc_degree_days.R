@@ -257,6 +257,7 @@ dd_fractions <- filled_temperature_dataset_fix %>%
 
 # Now make two new columns:
 # thirty_day_dd: The 30-day sum of DDs
+# lag_thirty_day_dd: Same as above, but lagged one day
 # cume_dd: The cumulative sum of DDs since Jan 01
 dd_aggregations <- dd_fractions %>%
   arrange(site_id, date) %>%
@@ -267,17 +268,19 @@ dd_aggregations <- dd_fractions %>%
                                  # Indices with too few data points = NA
                                  fill = NA,
                                  # Move left to right
-                                 align = "right")) %>%
+                                 align = "right"),
+         lag_thirty_day_dd = lag(x = thirty_day_dd, n = 1L)) %>%
   group_by(site_id, year) %>%
-  mutate(cume_dd = cumsum(dd)) 
+  mutate(cume_dd = cumsum(dd)) %>%
+  ungroup()
 
 # Do the timelines for the 30-day DD and cume DD make sense?
 # Red = Cumulative DDs annually
-# Blue = 30-day rolling sum of DDs
+# Blue = Lagged 30-day rolling sum of DDs
 dd_aggregations %>%
   filter(site_id == "BLAN") %>%
   ggplot() +
-  geom_point(aes(x = date, y = thirty_day_dd, color = "#57106e")) +
+  geom_point(aes(x = date, y = lag_thirty_day_dd, color = "#57106e")) +
   geom_point(aes(x = date, y = cume_dd, color = "#f98e09")) +
   xlab("Date") +
   ylab("Summed DDs") +    
