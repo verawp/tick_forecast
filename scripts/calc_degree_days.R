@@ -269,7 +269,10 @@ dd_aggregations <- dd_fractions %>%
                                  fill = NA,
                                  # Move left to right
                                  align = "right"),
-         lag_thirty_day_dd = lag(x = thirty_day_dd, n = 1L)) %>%
+         lag_thirty_day_dd = lag(x = thirty_day_dd, n = 1L),
+         lag_thirty_day_dd_34wk = lag(x = thirty_day_dd, n = 34L),
+         lag_thirty_day_dd_50wk = lag(x = thirty_day_dd, n = 50L),
+         lag_thirty_day_dd_42wk = lag(x = thirty_day_dd, n = 42L)) %>%
   group_by(site_id, year) %>%
   mutate(cume_dd = cumsum(dd)) %>%
   ungroup()
@@ -286,7 +289,7 @@ dd_aggregations %>%
   ylab("Summed DDs") +    
   scale_color_identity(name = "Legend",
                        breaks = c("#f98e09", "#57106e"),
-                       labels = c("Cumulative annual", "30-day rolling sum"),
+                       labels = c("Cumulative annual", "30-day rolling sum (lag)"),
                        guide = "legend") +
   ggtitle("BLAN degree day aggregation example") +
   theme_bw()
