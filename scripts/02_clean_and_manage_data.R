@@ -1,6 +1,7 @@
 library(tidyverse)
 library(lubridate)
 library(MMWRweek)
+library(plantecophys)
 
 
 # 1. Combine NEON tick and NEON weather data ------------------------------
@@ -10,6 +11,9 @@ tick_targets <- read_csv(file = "data/ticks_target.csv")
 temp_compiled <- read_csv(file = "data/neon_temp_compiled.csv")
 rh_compiled <- read_csv(file = "data/neon_rh_compiled.csv")
 precip_compiled <- read_csv(file = "data/neon_precip_compiled.csv")
+vpd_min_prism <- read_rds(file = "data/vpd_min_prism.rds")
+vpd_max_prism <- read_rds(file = "data/vpd_max_prism.rds")
+full_gridmet <- read_csv(file = "data/gridmet_data_compiled.csv")
 
 # Vector of final columns that will need some values turned into NAs again
 cols_to_fix <- c("mean_temp", "min_temp", "max_temp", "mean_var_temp",
@@ -39,7 +43,8 @@ full_dataset <- reduce(.x = list(
     rename(prop_na_precip = prop_na) %>%
     group_by(site_id = site, year, mmwr_week = epiweek(date)) %>%
     summarize(site_id = toupper(site_id),
-              sum_precip_mm = sum(sum_precip_mm, na.rm = TRUE))),
+              sum_precip_mm = sum(sum_precip_mm, na.rm = TRUE),
+              precip_type = unique(precip_type))),
   .f = full_join,
   by = c("site_id", "year", "mmwr_week")) %>%
   mutate(
@@ -191,11 +196,6 @@ tick_neon_riem_clean <- tick_neon_riem %>%
       (site_id == "UKFS" & time %within% ukfs_limits)) %>%
   arrange(site_id, time) 
 
-# Export for external use
-write_csv(x = tick_neon_riem_clean,
-          file = "data/ticks_with_filled_weather.csv")
-
-
 
 # Anything weird happening with these different sources?
 ggplot(data = tick_neon_riem_clean %>%
@@ -220,13 +220,167 @@ ggplot(data = tick_neon_riem_clean %>%
 # Note that SCBI seems to have some inaccurate data in early 2019...
 
 
-# 3. Assess coverage of non-temp vars -------------------------------------
+# 3. Calculate air VPD ----------------------------------------------------
+
+# Calculate VPD using existing NEON RH values
+full_dataset_w_vpd <- tick_neon_riem_clean %>%
+  mutate(min_air_vpd = RHtoVPD(RH = min_rh_pct, TdegC = min_temp),
+         mean_air_vpd = RHtoVPD(RH = mean_rh_pct, TdegC = mean_temp),
+         max_air_vpd = RHtoVPD(RH = max_rh_pct, TdegC = max_temp))
+
+# Well...could be better
+full_join(x = full_dataset_w_vpd,
+          y = vpd_min_prism %>%
+            rename(site_id = field_site_id) %>%
+            group_by(site_id, year = year(date), mmwr_week = epiweek(date)) %>%
+            summarize(min_vpd = min(vpd_min, na.rm = TRUE)),
+          by = c("site_id", "year", "mmwr_week")) %>%
+  ggplot() +
+  geom_point(aes(x = min_air_vpd, y = min_vpd)) +
+  geom_abline(slope = 1, intercept = 0) +
+  facet_wrap(vars(site_id)) +
+  xlim(c(0, 4)) +
+  ylim(c(0, 4)) +
+  xlab("Manual VPD, min.") +
+  ylab("PRISM VPD, min")
+
+
+# What about using GridMet?
+gridmet_vpd <- full_join(x = full_gridmet %>%
+                           rowwise() %>%
+                           mutate(rh_mean = mean(c(rh_min, rh_max))) %>%
+                           ungroup() %>%
+                           rename(site_id = field_site_id),
+                         y = temp_compiled %>%
+                           mutate(site_id = toupper(site)) %>%
+                           select(site_id, date, mean_temp_c, min_temp_c, max_temp_c),
+                         by = c("site_id", "date"))  %>%
+  mutate(min_air_vpd = RHtoVPD(RH = rh_min , TdegC = min_temp_c),
+         mean_air_vpd = RHtoVPD(RH = rh_mean, TdegC = mean_temp_c),
+         max_air_vpd = RHtoVPD(RH = rh_max, TdegC = max_temp_c)) %>%
+  group_by(site_id, year = year(date), mmwr_week = epiweek(date)) %>%
+  summarize(
+    # VPD direct from GridMet
+    min_vpd_gridmet = min(vpd, na.rm = TRUE),
+    mean_vpd_gridmet = mean(vpd, na.rm = TRUE),
+    max_vpd_gridmet = max(vpd, na.rm = TRUE),
+    # VPD made from GridMet + NEON
+    min_vpd_mix = min(min_air_vpd, na.rm = TRUE),
+    mean_vpd_mix = mean(mean_air_vpd, na.rm = TRUE),
+    max_vpd_mix = max(max_air_vpd, na.rm = TRUE),
+    # RH only
+    min_rh_gridmet = min(rh_min, na.rm = TRUE),
+    mean_rh_gridmet = mean(rh_mean, na.rm = TRUE),
+    max_rh_gridmet = max(rh_max, na.rm = TRUE))
+
+# Mixing GridMet with NEON yields decent results
+full_join(x = full_dataset_w_vpd %>%
+            select(site_id, year, mmwr_week, contains("_vpd")),
+          y = gridmet_vpd,
+          by = c("site_id", "year", "mmwr_week")) %>%
+  ggplot() +
+  geom_point(aes(x = min_air_vpd, y = min_vpd_mix)) +
+  geom_abline(slope = 1, intercept = 0) +
+  facet_wrap(vars(site_id)) +
+  xlim(c(0, 4)) +
+  ylim(c(0, 4)) +
+  xlab("NEON VPD, min.") +
+  ylab("GridMet VPD, min")
+
+# Using GridMet directly yields less impressive results
+full_join(x = full_dataset_w_vpd %>%
+            select(site_id, year, mmwr_week, contains("_vpd")),
+          y = gridmet_vpd,
+          by = c("site_id", "year", "mmwr_week")) %>%
+  ggplot() +
+  geom_point(aes(x = min_air_vpd, y = min_vpd_gridmet)) +
+  geom_abline(slope = 1, intercept = 0) +
+  facet_wrap(vars(site_id)) +
+  xlim(c(0, 4)) +
+  ylim(c(0, 4)) +
+  xlab("NEON VPD, min.") +
+  ylab("GridMet VPD, min")
+
+# Merge the GirdMet-NEON VPD data with the existing dataset. But only use the
+# new VPD data if there is no NEON-derived available
+tick_neon_vpd_fill <- full_join(
+  x = full_dataset_w_vpd,
+  y = gridmet_vpd %>%
+    select(site_id, year, mmwr_week, min_vpd_mix, mean_vpd_mix, max_vpd_mix,
+           min_rh_gridmet, mean_rh_gridmet, max_rh_gridmet),
+  by = c("site_id", "year", "mmwr_week")) %>%
+  # Use the RIEM-sourced data when NEON is NA:
+  mutate(
+    # Record which source the temp data came from
+    rh_vpd_source = case_when(
+      
+      # Condition: All NEON columns are NA ...AND...
+      (!is.finite(mean_air_vpd) & !is.finite(min_air_vpd) & !is.finite(max_air_vpd)) &
+        # ...none of the GridMet/mixed columns are NA
+        (is.finite(mean_vpd_mix) & is.finite(min_vpd_mix) & is.finite(max_vpd_mix)) ~ "GridMet/NEON",
+      
+      # Condition: All of the NEON columns are NA ...AND...
+      (!is.finite(mean_air_vpd) & !is.finite(min_air_vpd) & !is.finite(max_air_vpd)) &
+        # ...all of the RIEM columns are NA as well
+        (!is.finite(mean_vpd_mix) & !is.finite(min_vpd_mix) & !is.finite(max_vpd_mix)) ~ "All sources NA",
+      
+      # Condition: None of the NEON columns are NA
+      is.finite(mean_air_vpd) & is.finite(min_air_vpd) & is.finite(max_air_vpd) ~ "NEON",
+      
+      # If one of the above options doesn't apply...
+      TRUE ~ "Unexpected values"),
+    
+    mean_rh_pct = case_when(
+      # If NEON is NA, then use Gridmet
+      !is.finite(mean_rh_pct) ~ mean_rh_gridmet,
+      # In all other cases use NEON
+      TRUE ~ mean_rh_pct),
+    min_rh_pct = case_when(
+      !is.finite(min_rh_pct) ~ min_rh_gridmet,
+      TRUE ~ min_rh_pct),
+    max_rh_pct = case_when(
+      !is.finite(max_rh_pct) ~ max_rh_gridmet,
+      TRUE ~ max_rh_pct),
+    
+    mean_air_vpd = case_when(
+      # If NEON is NA, then use Gridmet
+      !is.finite(mean_air_vpd) ~ mean_vpd_mix,
+      # In all other cases use NEON
+      TRUE ~ mean_air_vpd),
+    min_air_vpd = case_when(
+      !is.finite(min_air_vpd) ~ min_vpd_mix,
+      TRUE ~ min_air_vpd),
+    max_air_vpd = case_when(
+      !is.finite(max_air_vpd) ~ max_vpd_mix,
+      TRUE ~ max_air_vpd),
+    
+    # Fill in missing dates based on their MMWR week
+    time = if_else(condition = is.na(time),
+                   true = MMWRweek2Date(MMWRyear = year, MMWRweek = mmwr_week),
+                   false = time),
+    day_num = if_else(condition = is.na(day_num),
+                      true = yday(time),
+                      false = day_num)) %>%
+  select(site_id, time, year, day_num, mmwr_week, amblyomma_americanum,
+         mean_temp, min_temp, max_temp, temp_source, contains("rh_pct"),
+         contains("precip"), contains("air_vpd"), rh_vpd_source)
+
+# Export for external use
+write_csv(x = tick_neon_vpd_fill,
+          file = "data/ticks_with_filled_weather.csv")
+
+# NOTE: We could still further fill this dataset with VPD from GridMet. It would
+# be better than PRISM I think, but it would still be less accurate than the
+# approach of combining GridMet RH with NEON temps
+
+
+# 4. Assess coverage of variables -----------------------------------------
 
 # What's RH coverage looking like?
-ggplot(data = tick_neon_riem_clean) +
+ggplot(data = tick_neon_vpd_fill) +
   geom_point(aes(x = time, y = mean_rh_pct), alpha = 0.45, color = "black",
              fill = "gray20", shape = 21, size = 2) +
-  geom_point(data = tick_neon_riem_clean %>%
+  geom_point(data = tick_neon_vpd_fill %>%
                filter(is.na(mean_rh_pct)),
              aes(x = time, y = 0, color = "red", shape = 4), 
              alpha = 0.7) +
@@ -240,13 +394,53 @@ ggplot(data = tick_neon_riem_clean) +
   theme(legend.position = "bottom",
         axis.title = element_text(size = 12),
         plot.title = element_text(size = 14, face = "bold")) +
-  ggtitle("Weekly RH data completion, NEON")
+  ggtitle("Weekly mean RH data completion")
 
-# What's precip coverage looking like?
-ggplot(data = tick_neon_riem_clean) +
+# VPD
+ggplot(data = tick_neon_vpd_fill) +
+  geom_point(aes(x = time, y = mean_air_vpd), alpha = 0.45, color = "black",
+             fill = "gray20", shape = 21, size = 2) +
+  geom_point(data = tick_neon_vpd_fill %>%
+               filter(is.na(mean_air_vpd)),
+             aes(x = time, y = 0, color = "red", shape = 4), 
+             alpha = 0.7) +
+  # scale_color_manual("NA data for RH", values = "red") +
+  scale_color_identity("", guide = "legend", breaks = "red", labels = "NA data for VPD") +
+  scale_shape_identity("", guide = "legend", breaks = 4, labels = "NA data for VPD") +
+  xlab("Date") +
+  ylab("Vapor pressure deficit") +
+  facet_wrap(vars(site_id), scales = "free", ncol = 2) +
+  theme_bw() +
+  theme(legend.position = "bottom",
+        axis.title = element_text(size = 12),
+        plot.title = element_text(size = 14, face = "bold")) +
+  ggtitle("Weekly mean VPD data completion")
+
+ggplot(data = tick_neon_vpd_fill %>%
+         filter(rh_vpd_source %in% c("NEON", "GridMet/NEON"))) +
+  geom_point(aes(x = time, y = mean_air_vpd, fill = rh_vpd_source),
+             color = "black", alpha = 0.45, shape = 21, size = 2) +
+  geom_point(data = tick_neon_vpd_fill %>%
+               filter(rh_vpd_source == "All sources NA"),
+             aes(x = time, y = 0, size = ""), color = "red",
+             shape = 4) +
+  scale_fill_viridis_d("VPD Source") +
+  scale_size_discrete("All VPD sources NA") +
+  xlab("Date") +
+  ylab("Mean VPD") +
+  facet_wrap(vars(site_id), scales = "free", ncol = 2) +
+  theme_bw() +
+  theme(legend.position = "bottom",
+        axis.title = element_text(size = 12),
+        plot.title = element_text(size = 14, face = "bold")) +
+  ggtitle("Weekly VPD data completion by raw data source")
+
+
+# Precip
+ggplot(data = tick_neon_vpd_fill) +
   geom_point(aes(x = time, y = sum_precip_mm ), alpha = 0.35, color = "black",
              fill = "gray20", shape = 21, size = 2) +
-  geom_point(data = tick_neon_riem_clean %>%
+  geom_point(data = tick_neon_vpd_fill %>%
                filter(is.na(sum_precip_mm)),
              aes(x = time, y = 0, color = "red", shape = 4),
              alpha = 0.4) +
@@ -255,15 +449,78 @@ ggplot(data = tick_neon_riem_clean) +
   scale_shape_identity("", guide = "legend", breaks = 4, labels = "NA data for precip") +
   xlab("Date") +
   ylab("Precip, mm") +
-  facet_wrap(vars(site_id), scales = "free", ncol = 2) +
+  facet_wrap(vars(site_id), scales = "free", nrow = 2) +
   theme_bw() +
   theme(legend.position = "bottom",
         axis.title = element_text(size = 12),
         plot.title = element_text(size = 14, face = "bold")) +
   ggtitle("Weekly precip data completion, NEON")
 
+# Make a table for easier assessment
+tick_neon_vpd_fill %>%
+  summarize(across(everything(),
+                   is.finite)) %>%
+  summarize(across(everything(),
+                   ~ round(sum(.) / nrow(tick_neon_vpd_fill),
+                           digits = 2))) %>%
+  pivot_longer(names_to = "variable", values_to = "pct_complete", everything()) %>%
+  filter(!(variable %in% c("site_id", "time", "year", "day_num", "mmwr_week",
+                           "temp_source", "rh_vpd_source", "precip_type"))) %>%
+  arrange(pct_complete) %>%
+  write_csv(file = "data/na_counts_by_col.csv")
 
 
+# 5. Look at missing tick counts ------------------------------------------
+
+tick_no_field <- read_csv(file = "data/ticks_missed_sample_dates.csv")
+
+tick_neon_vpd_fill
+
+# Weeks between samples
+weeks_between <- tick_neon_vpd_fill %>%
+  filter(!is.na(amblyomma_americanum)) %>%
+  group_by(site_id) %>%
+  arrange(time) %>%
+  mutate(t_previous_sample = abs(as.numeric(time %--% lag(x = time, n = 1L), "weeks")))
+
+weeks_between %>%
+  ggplot() +
+  geom_histogram(aes(t_previous_sample),
+                 color = "black", fill = "white", binwidth = 1) +
+  geom_histogram(data = filter(weeks_between, t_previous_sample %in% c(3, 6)),
+                 aes(t_previous_sample),
+                 color = "black", fill = "red", binwidth = 1) +
+  facet_wrap(vars(site_id), scales = "free_y") +
+  theme_bw() +
+  xlab("Number of weeks since last non-NA tick value") +
+  ylab("Frequency")
 
 
+# 6. Incorporate degree days ----------------------------------------------
+
+# The degree day calculations are made in calc_degree_days.R
+dd_aggregations <- read_csv(file = "data/daily_dd_calcs.csv")
+
+# Column defs:
+# thirty_day_dd: The 30-day sum of DDs
+# lag_thirty_day_dd: Same as above, but lagged one day
+# cume_dd: The cumulative sum of DDs since Jan 01
+
+# NOTE: The temp_source column in tick_neon_vpd_fill won't match the one in
+# the degree day dataset because I had to use GridMet to backfill additional
+# values
+tick_join_dd <- left_join(x = tick_neon_vpd_fill,
+                          y = dd_aggregations %>%
+                            mutate(mmwr_week = epiweek(date),
+                                   day_num = yday(date)) %>%
+                            select(-temp_source),
+                          by = c("site_id", "year", "time" = "date",
+                                 "day_num", "mmwr_week"))
+
+summary(tick_join_dd)
+
+
+# Export for external use
+write_csv(x = tick_join_dd,
+          file = "data/ticks_with_filled_weather.csv")
 

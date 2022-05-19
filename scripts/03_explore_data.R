@@ -17,7 +17,7 @@ state_shapes <- ne_states(country = "United States of America",
 #                       guess_max = 1e6)
 
 # Tick data with weather attached
-tick_data <- read_csv(file = "data/ticks_with_weather.csv")
+tick_data <- read_csv(file = "data/ticks_with_filled_weather.csv")
 
 # Preview the data
 head(tick_data)
@@ -28,7 +28,7 @@ head(tick_data)
 correlations <- tick_data %>%
   select(amblyomma_americanum, mean_temp, min_temp, max_temp, mean_var_temp,
          mean_rh_pct, min_rh_pct, max_rh_pct) %>%
-  cor(use = "pairwise.complete.obs")
+  cor(use = "complete.obs")
 
 corrplot(corr = correlations, type = "upper")
 

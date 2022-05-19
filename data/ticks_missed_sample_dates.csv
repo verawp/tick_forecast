@@ -1,0 +1,333 @@
+siteID,nlcdClass,decimalLatitude,decimalLongitude,elevation,totalSampledArea,remarks
+SCBI,deciduousForest,38.901865,-78.161944,261.6,NA,Plot too thorny to meet minimum sampling area requirement
+LENO,woodyWetlands,31.817828,-88.182885,15,NA,Only 45-50m of dry area
+OSBS,woodyWetlands,29.704063,-82.008061,34.4,NA,COVID19
+OSBS,evergreenForest,29.683403,-81.960448,41.8,NA,COVID19
+OSBS,evergreenForest,29.703656,-81.958372,35,NA,COVID19
+OSBS,mixedForest,29.688556,-81.970004,38.6,NA,COVID19
+OSBS,woodyWetlands,29.678312,-82.015674,29.7,NA,COVID19
+OSBS,deciduousForest,29.678818,-81.947792,36.9,NA,COVID19
+OSBS,evergreenForest,29.683403,-81.960448,41.8,NA,COVID19
+OSBS,deciduousForest,29.678818,-81.947792,36.9,NA,COVID19
+OSBS,woodyWetlands,29.704063,-82.008061,34.4,NA,COVID19
+OSBS,mixedForest,29.688556,-81.970004,38.6,NA,COVID19
+OSBS,woodyWetlands,29.678312,-82.015674,29.7,NA,COVID19
+OSBS,evergreenForest,29.703656,-81.958372,35,NA,COVID19
+LENO,woodyWetlands,31.822384,-88.181964,12.6,NA,COVID19
+LENO,deciduousForest,31.809574,-88.18756,13.2,NA,COVID19
+LENO,deciduousForest,31.80946,-88.181413,11.3,NA,COVID19
+LENO,woodyWetlands,31.806282,-88.195217,16.7,NA,COVID19
+LENO,woodyWetlands,31.817828,-88.182885,15,NA,COVID19
+LENO,woodyWetlands,31.8173,-88.19149,12.1,NA,COVID19
+LENO,deciduousForest,31.80946,-88.181413,11.3,NA,COVID19
+LENO,woodyWetlands,31.822384,-88.181964,12.6,NA,COVID19
+LENO,woodyWetlands,31.806282,-88.195217,16.7,NA,COVID19
+LENO,woodyWetlands,31.817828,-88.182885,15,NA,COVID19
+LENO,deciduousForest,31.809574,-88.18756,13.2,NA,COVID19
+LENO,woodyWetlands,31.8173,-88.19149,12.1,NA,COVID19
+UKFS,deciduousForest,39.037238,-95.19863,321.9,NA,COVID19
+UKFS,grasslandHerbaceous,39.045116,-95.213433,321.2,NA,COVID19
+UKFS,grasslandHerbaceous,39.053205,-95.194658,324.8,NA,COVID19
+UKFS,deciduousForest,39.043188,-95.201,319.4,NA,COVID19
+UKFS,deciduousForest,39.053769,-95.187084,322.4,NA,COVID19
+UKFS,deciduousForest,39.045893,-95.207026,315.3,NA,COVID19
+SERC,deciduousForest,38.896257,-76.55818,17.3,NA,Prolonged moisture retention
+LENO,woodyWetlands,31.817828,-88.182885,15,NA,More than 50 percent of plot under water.
+LENO,deciduousForest,31.80946,-88.181413,11.3,NA,More than 50 percent of plot under water.
+LENO,deciduousForest,31.80946,-88.181413,11.3,NA,COVID-19
+LENO,woodyWetlands,31.8173,-88.19149,12.1,NA,COVID19
+LENO,deciduousForest,31.809574,-88.18756,13.2,NA,COVID-19
+LENO,woodyWetlands,31.817828,-88.182885,15,NA,COVID-19
+LENO,woodyWetlands,31.822384,-88.181964,12.6,NA,COVID-19
+LENO,woodyWetlands,31.806282,-88.195217,16.7,NA,COVID-19
+SCBI,deciduousForest,38.901865,-78.161944,261.6,NA,COVID19
+SCBI,pastureHay,38.897079,-78.150277,277.5,NA,COVID19
+SCBI,deciduousForest,38.873041,-78.163313,361.3,NA,COVID19
+SCBI,deciduousForest,38.893863,-78.1427,329,NA,COVID19
+SCBI,deciduousForest,38.86574,-78.16312,361.9,NA,COVID19
+SCBI,deciduousForest,38.886022,-78.129368,427.4,NA,COVID19
+SCBI,deciduousForest,38.901865,-78.161944,261.6,NA,Wet
+LENO,woodyWetlands,31.817828,-88.182885,15,NA,Flooded
+LENO,woodyWetlands,31.817828,-88.182885,15,NA,NA
+SCBI,deciduousForest,38.86574,-78.16312,361.9,NA,COVID19
+SCBI,deciduousForest,38.873041,-78.163313,361.3,NA,COVID19
+SCBI,deciduousForest,38.886022,-78.129368,427.4,NA,COVID19
+SCBI,pastureHay,38.897079,-78.150277,277.5,NA,COVID19
+SCBI,deciduousForest,38.893863,-78.1427,329,NA,COVID19
+SCBI,deciduousForest,38.901865,-78.161944,261.6,NA,COVID19
+ORNL,deciduousForest,35.974904,-84.226626,336.2,NA,COVID19
+ORNL,deciduousForest,35.983081,-84.211655,334.7,NA,COVID19
+ORNL,deciduousForest,35.967016,-84.229854,270.6,NA,COVID19
+ORNL,deciduousForest,35.933531,-84.334026,321.7,NA,COVID19
+ORNL,evergreenForest,35.975522,-84.305103,273.8,NA,COVID19
+ORNL,deciduousForest,35.925842,-84.328415,277.7,NA,COVID19
+SCBI,deciduousForest,38.873041,-78.163313,361.3,NA,COVID19
+SCBI,deciduousForest,38.86574,-78.16312,361.9,NA,COVID19
+SCBI,pastureHay,38.897079,-78.150277,277.5,NA,COVID19
+SCBI,deciduousForest,38.901865,-78.161944,261.6,NA,COVID19
+SCBI,deciduousForest,38.886022,-78.129368,427.4,NA,COVID19
+SCBI,deciduousForest,38.893863,-78.1427,329,NA,COVID19
+SERC,deciduousForest,38.894058,-76.546297,4.9,NA,COVID19
+SERC,deciduousForest,38.880016,-76.561641,19.3,NA,COVID19
+SERC,deciduousForest,38.880025,-76.548383,3,NA,COVID19
+SERC,deciduousForest,38.868184,-76.535301,2.5,NA,COVID19
+SERC,cultivatedCrops,38.873978,-76.535923,6.9,NA,COVID19
+SERC,deciduousForest,38.896257,-76.55818,17.3,NA,COVID19
+ORNL,deciduousForest,35.933531,-84.334026,321.7,NA,Could not complete due to extreme heat
+SCBI,deciduousForest,38.901865,-78.161944,261.6,NA,Too many thorns to complete minimum sampling distance
+SCBI,deciduousForest,38.901865,-78.161944,261.6,NA,Plot too thorny to reach minimum sampling distance
+BLAN,deciduousForest,39.086224,-77.972736,168.3,NA,Unable to sample during bout window due to wet conditions
+SCBI,deciduousForest,38.901865,-78.161944,261.6,NA,Too many thorns to complete; sampling completed for 63m
+LENO,deciduousForest,31.809574,-88.18756,13.2,NA,Site inaccessible due to road damage
+LENO,deciduousForest,31.80946,-88.181413,11.3,NA,Site inaccessible due to road damage
+LENO,woodyWetlands,31.822384,-88.181964,12.6,NA,Site inaccessible due to road damage
+LENO,woodyWetlands,31.806282,-88.195217,16.7,NA,Site inaccessible due to road damage
+LENO,woodyWetlands,31.817828,-88.182885,15,NA,Site inaccessible due to road damage
+LENO,woodyWetlands,31.8173,-88.19149,12.1,NA,Site inaccessible due to road damage
+LENO,woodyWetlands,31.806282,-88.195217,16.7,NA,Site inaccessible due to road damage
+LENO,woodyWetlands,31.817828,-88.182885,15,NA,Site inaccessible due to road damage
+LENO,deciduousForest,31.80946,-88.181413,11.3,NA,Site inaccessible due to road damage
+LENO,woodyWetlands,31.8173,-88.19149,12.1,NA,Site inaccessible due to road damage
+LENO,woodyWetlands,31.822384,-88.181964,12.6,NA,Site inaccessible due to road damage
+LENO,deciduousForest,31.809574,-88.18756,13.2,NA,Site inaccessible due to road damage
+LENO,woodyWetlands,31.822384,-88.181964,12.6,NA,COVID19
+LENO,woodyWetlands,31.8173,-88.19149,12.1,NA,COVID19
+LENO,deciduousForest,31.80946,-88.181413,11.3,NA,COVID19
+LENO,deciduousForest,31.809574,-88.18756,13.2,NA,COVID19
+LENO,woodyWetlands,31.817828,-88.182885,15,NA,COVID19
+LENO,woodyWetlands,31.806282,-88.195217,16.7,NA,COVID19
+TALL,deciduousForest,32.976366,-87.432192,114.7,NA,COVID19
+TALL,evergreenForest,32.899153,-87.444554,111.1,NA,COVID19
+TALL,mixedForest,32.894409,-87.416533,117,NA,COVID19
+TALL,evergreenForest,32.971554,-87.415844,139,NA,COVID19
+TALL,mixedForest,32.920826,-87.42896,99.3,NA,COVID19
+TALL,deciduousForest,32.922873,-87.434098,126.8,NA,COVID19
+SERC,deciduousForest,38.880025,-76.548383,3,NA,Wet entire window
+SERC,deciduousForest,38.896257,-76.55818,17.3,NA,Wet entire window
+SERC,deciduousForest,38.894058,-76.546297,4.9,NA,Wet entire window
+SERC,deciduousForest,38.868184,-76.535301,2.5,NA,wet entire window
+SERC,deciduousForest,38.880016,-76.561641,19.3,NA,Wet entire window
+OSBS,woodyWetlands,29.678312,-82.015674,29.7,NA,COVID19
+OSBS,woodyWetlands,29.704063,-82.008061,34.4,NA,COVID19
+OSBS,deciduousForest,29.678818,-81.947792,36.9,NA,COVID19
+OSBS,evergreenForest,29.683403,-81.960448,41.8,NA,COVID19
+OSBS,mixedForest,29.688556,-81.970004,38.6,NA,COVID19
+OSBS,evergreenForest,29.703656,-81.958372,35,NA,COVID19
+OSBS,deciduousForest,29.678818,-81.947792,36.9,NA,COVID19
+OSBS,woodyWetlands,29.704063,-82.008061,34.4,NA,COVID19
+OSBS,woodyWetlands,29.678312,-82.015674,29.7,NA,COVID19
+OSBS,evergreenForest,29.683403,-81.960448,41.8,NA,COVID19
+OSBS,evergreenForest,29.703656,-81.958372,35,NA,COVID19
+OSBS,mixedForest,29.688556,-81.970004,38.6,NA,COVID19
+SCBI,deciduousForest,38.886022,-78.129368,427.4,NA,COVID19
+SCBI,deciduousForest,38.901865,-78.161944,261.6,NA,COVID19
+SCBI,pastureHay,38.897079,-78.150277,277.5,NA,COVID19
+SCBI,deciduousForest,38.86574,-78.16312,361.9,NA,COVID19
+SCBI,deciduousForest,38.873041,-78.163313,361.3,NA,COVID19
+SCBI,deciduousForest,38.893863,-78.1427,329,NA,COVID19
+BLAN,pastureHay,39.088416,-77.961331,123.7,NA,COVID19
+BLAN,deciduousForest,39.088729,-77.955492,125.9,NA,COVID19
+BLAN,pastureHay,39.101651,-77.981855,159,NA,COVID19
+BLAN,deciduousForest,39.082719,-77.95959,134.9,NA,COVID19
+BLAN,deciduousForest,39.086224,-77.972736,168.3,NA,COVID19
+BLAN,pastureHay,39.083875,-77.966321,159.2,NA,COVID19
+LENO,woodyWetlands,31.8173,-88.19149,12.1,NA,More than 80 meters of the transect is wet.
+LENO,deciduousForest,31.809574,-88.18756,13.2,NA,More than 80 meters of the transect wet from previous flooding.
+LENO,woodyWetlands,31.817828,-88.182885,15,NA,More than 80 meters of the transect is flooded.
+LENO,deciduousForest,31.80946,-88.181413,11.3,NA,More than 80 meters of the transect is flooded
+BLAN,deciduousForest,39.088729,-77.955492,125.9,NA,COVID19
+BLAN,deciduousForest,39.082719,-77.95959,134.9,NA,COVID19
+BLAN,deciduousForest,39.086224,-77.972736,168.3,NA,COVID19
+BLAN,pastureHay,39.088416,-77.961331,123.7,NA,COVID19
+BLAN,pastureHay,39.101651,-77.981855,159,NA,COVID19
+BLAN,pastureHay,39.083875,-77.966321,159.2,NA,COVID19
+BLAN,pastureHay,39.083875,-77.966321,159.2,NA,COVID19
+BLAN,deciduousForest,39.088729,-77.955492,125.9,NA,COVID19
+BLAN,pastureHay,39.101651,-77.981855,159,NA,COVID19
+BLAN,deciduousForest,39.082719,-77.95959,134.9,NA,COVID19
+BLAN,deciduousForest,39.086224,-77.972736,168.3,NA,COVID19
+BLAN,pastureHay,39.088416,-77.961331,123.7,NA,COVID19
+OSBS,evergreenForest,29.683403,-81.960448,41.8,NA,COVID19
+OSBS,deciduousForest,29.678818,-81.947792,36.9,NA,COVID19
+OSBS,woodyWetlands,29.704063,-82.008061,34.4,NA,COVID19
+OSBS,evergreenForest,29.703656,-81.958372,35,NA,COVID19
+OSBS,mixedForest,29.688556,-81.970004,38.6,NA,COVID19
+OSBS,woodyWetlands,29.678312,-82.015674,29.7,NA,COVID19
+LENO,woodyWetlands,31.817828,-88.182885,15,NA,More than 80 m of of transect flooded
+LENO,deciduousForest,31.80946,-88.181413,11.3,NA,Sampling Impractical. More than 80 meters of the transect is flooded.
+ORNL,evergreenForest,35.975522,-84.305103,273.8,NA,rain and storms preventing sampling
+ORNL,deciduousForest,35.983081,-84.211655,334.7,NA,rain and storms preventing sampling
+ORNL,deciduousForest,35.967016,-84.229854,270.6,NA,rain and storms preventing sampling
+ORNL,deciduousForest,35.933531,-84.334026,321.7,NA,rain and storms preventing sampling
+ORNL,deciduousForest,35.925842,-84.328415,277.7,NA,rain and storms preventing sampling
+ORNL,deciduousForest,35.974904,-84.226626,336.2,NA,rain and storms preventing sampling
+ORNL,deciduousForest,35.925842,-84.328415,277.7,NA,COVID19
+ORNL,evergreenForest,35.975522,-84.305103,273.8,NA,COVID19
+ORNL,deciduousForest,35.967016,-84.229854,270.6,NA,COVID19
+ORNL,deciduousForest,35.974904,-84.226626,336.2,NA,COVID19
+ORNL,deciduousForest,35.983081,-84.211655,334.7,NA,COVID19
+ORNL,deciduousForest,35.933531,-84.334026,321.7,NA,COVID19
+TALL,deciduousForest,32.976366,-87.432192,114.7,NA,COVID19
+TALL,evergreenForest,32.971554,-87.415844,139,NA,COVID19
+TALL,mixedForest,32.920826,-87.42896,99.3,NA,COVID19
+TALL,deciduousForest,32.922873,-87.434098,126.8,NA,COVID19
+TALL,evergreenForest,32.899153,-87.444554,111.1,NA,COVID19
+TALL,mixedForest,32.894409,-87.416533,117,NA,COVID19
+TALL,mixedForest,32.894409,-87.416533,117,NA,COVID19
+TALL,mixedForest,32.920826,-87.42896,99.3,NA,COVID19
+TALL,deciduousForest,32.976366,-87.432192,114.7,NA,COVID19
+TALL,evergreenForest,32.971554,-87.415844,139,NA,COVID19
+TALL,evergreenForest,32.899153,-87.444554,111.1,NA,COVID19
+TALL,deciduousForest,32.922873,-87.434098,126.8,NA,COVID19
+SERC,deciduousForest,38.868184,-76.535301,2.5,NA,COVID19
+SERC,deciduousForest,38.880016,-76.561641,19.3,NA,COVID19
+SERC,deciduousForest,38.896257,-76.55818,17.3,NA,COVID19
+SERC,deciduousForest,38.894058,-76.546297,4.9,NA,COVID19
+SERC,deciduousForest,38.880025,-76.548383,3,NA,COVID19
+SERC,cultivatedCrops,38.873978,-76.535923,6.9,NA,COVID19
+SERC,deciduousForest,38.868184,-76.535301,2.5,NA,COVID19
+SERC,deciduousForest,38.880016,-76.561641,19.3,NA,COVID19
+SERC,deciduousForest,38.896257,-76.55818,17.3,NA,COVID19
+SERC,deciduousForest,38.894058,-76.546297,4.9,NA,COVID19
+SERC,deciduousForest,38.880025,-76.548383,3,NA,COVID19
+SERC,cultivatedCrops,38.873978,-76.535923,6.9,NA,COVID19
+UKFS,deciduousForest,39.045893,-95.207026,315.3,NA,COVID19
+UKFS,grasslandHerbaceous,39.053205,-95.194658,324.8,NA,COVID19
+UKFS,deciduousForest,39.037238,-95.19863,321.9,NA,COVID19
+UKFS,grasslandHerbaceous,39.045116,-95.213433,321.2,NA,COVID19
+UKFS,deciduousForest,39.053769,-95.187084,322.4,NA,COVID19
+UKFS,deciduousForest,39.043188,-95.201,319.4,NA,COVID19
+LENO,deciduousForest,31.809574,-88.18756,13.2,NA,Site inaccessible due to road damage
+LENO,woodyWetlands,31.806282,-88.195217,16.7,NA,Site inaccessible due to road damage
+LENO,woodyWetlands,31.817828,-88.182885,15,NA,Site inaccessible due to road damage
+LENO,woodyWetlands,31.8173,-88.19149,12.1,NA,Site inaccessible due to road damage
+LENO,woodyWetlands,31.822384,-88.181964,12.6,NA,Site inaccessible due to road damage
+LENO,deciduousForest,31.80946,-88.181413,11.3,NA,Site inaccessible due to road damage
+ORNL,deciduousForest,35.933531,-84.334026,321.7,NA,COVID19
+ORNL,evergreenForest,35.975522,-84.305103,273.8,NA,COVID19
+ORNL,deciduousForest,35.974904,-84.226626,336.2,NA,COVID19
+ORNL,deciduousForest,35.925842,-84.328415,277.7,NA,COVID19
+ORNL,deciduousForest,35.983081,-84.211655,334.7,NA,COVID19
+ORNL,deciduousForest,35.967016,-84.229854,270.6,NA,COVID19
+UKFS,grasslandHerbaceous,39.045116,-95.213433,321.2,NA,COVID19
+UKFS,deciduousForest,39.045893,-95.207026,315.3,NA,COVID19
+UKFS,deciduousForest,39.037238,-95.19863,321.9,NA,COVID19
+UKFS,grasslandHerbaceous,39.053205,-95.194658,324.8,NA,COVID19
+UKFS,deciduousForest,39.053769,-95.187084,322.4,NA,COVID19
+UKFS,deciduousForest,39.043188,-95.201,319.4,NA,COVID19
+KONZ,grasslandHerbaceous,39.074113,-96.557106,423.7,NA,COVID19
+KONZ,grasslandHerbaceous,39.107902,-96.584437,391.2,NA,COVID19
+KONZ,grasslandHerbaceous,39.118977,-96.547145,394.4,NA,COVID19
+KONZ,grasslandHerbaceous,39.087937,-96.545918,433.4,NA,COVID19
+KONZ,grasslandHerbaceous,39.109647,-96.551369,371.2,NA,COVID19
+KONZ,deciduousForest,39.103714,-96.597835,337.3,NA,COVID19
+KONZ,grasslandHerbaceous,39.118977,-96.547145,394.4,NA,COVID19
+KONZ,deciduousForest,39.103714,-96.597835,337.3,NA,COVID19
+KONZ,grasslandHerbaceous,39.074113,-96.557106,423.7,NA,COVID19
+KONZ,grasslandHerbaceous,39.087937,-96.545918,433.4,NA,COVID19
+KONZ,grasslandHerbaceous,39.109647,-96.551369,371.2,NA,COVID19
+KONZ,grasslandHerbaceous,39.107902,-96.584437,391.2,NA,COVID19
+TALL,mixedForest,32.894409,-87.416533,117,NA,Need to reflag due to vegetation growth.
+KONZ,grasslandHerbaceous,39.107902,-96.584437,391.2,NA,location also wet
+KONZ,grasslandHerbaceous,39.087937,-96.545918,433.4,NA,location also wet
+KONZ,grasslandHerbaceous,39.109647,-96.551369,371.2,NA,location also wet
+KONZ,grasslandHerbaceous,39.109647,-96.551369,371.2,NA,COVID19
+KONZ,grasslandHerbaceous,39.118977,-96.547145,394.4,NA,COVID19
+KONZ,grasslandHerbaceous,39.087937,-96.545918,433.4,NA,COVID19
+KONZ,deciduousForest,39.103714,-96.597835,337.3,NA,COVID19
+KONZ,grasslandHerbaceous,39.107902,-96.584437,391.2,NA,COVID19
+KONZ,grasslandHerbaceous,39.074113,-96.557106,423.7,NA,COVID19
+SERC,deciduousForest,38.880016,-76.561641,19.3,NA,COVID19
+SERC,cultivatedCrops,38.873978,-76.535923,6.9,NA,COVID19
+SERC,deciduousForest,38.880025,-76.548383,3,NA,COVID19
+SERC,deciduousForest,38.896257,-76.55818,17.3,NA,COVID19
+SERC,deciduousForest,38.894058,-76.546297,4.9,NA,COVID19
+SERC,deciduousForest,38.868184,-76.535301,2.5,NA,COVID19
+UKFS,grasslandHerbaceous,39.053205,-95.194658,324.8,NA,COVID19
+UKFS,deciduousForest,39.043188,-95.201,319.4,NA,COVID19
+UKFS,deciduousForest,39.045893,-95.207026,315.3,NA,COVID19
+UKFS,grasslandHerbaceous,39.045116,-95.213433,321.2,NA,COVID19
+UKFS,deciduousForest,39.053769,-95.187084,322.4,NA,COVID19
+UKFS,deciduousForest,39.037238,-95.19863,321.9,NA,COVID19
+UKFS,deciduousForest,39.037238,-95.19863,321.9,NA,COVID19
+UKFS,grasslandHerbaceous,39.053205,-95.194658,324.8,NA,COVID19
+UKFS,grasslandHerbaceous,39.045116,-95.213433,321.2,NA,COVID19
+UKFS,deciduousForest,39.045893,-95.207026,315.3,NA,COVID19
+UKFS,deciduousForest,39.043188,-95.201,319.4,NA,COVID19
+UKFS,deciduousForest,39.053769,-95.187084,322.4,NA,COVID19
+SCBI,deciduousForest,38.873041,-78.163313,361.3,NA,Plot too wet
+SCBI,deciduousForest,38.886022,-78.129368,427.4,NA,Plot too wet
+BLAN,pastureHay,39.101651,-77.981855,159,NA,Rain prior to sampling; too wet to sample
+BLAN,pastureHay,39.088416,-77.961331,123.7,NA,Rained prior to sampling; too wet to sample
+ORNL,deciduousForest,35.967016,-84.229854,270.6,NA,rain event makes it too wet to sample
+ORNL,deciduousForest,35.974904,-84.226626,336.2,NA,rain event makes it too wet to sample
+ORNL,deciduousForest,35.925842,-84.328415,277.7,NA,rain event makes it too wet to sample
+ORNL,evergreenForest,35.975522,-84.305103,273.8,NA,rain event makes it too wet to sample
+ORNL,deciduousForest,35.933531,-84.334026,321.7,NA,rain event makes it too wet to sample
+ORNL,deciduousForest,35.983081,-84.211655,334.7,NA,rain event makes it too wet to sample
+LENO,deciduousForest,31.809574,-88.18756,13.2,NA,COVID19
+LENO,deciduousForest,31.80946,-88.181413,11.3,NA,COVID19
+LENO,woodyWetlands,31.822384,-88.181964,12.6,NA,COVID19
+LENO,woodyWetlands,31.8173,-88.19149,12.1,NA,COVID19
+LENO,woodyWetlands,31.817828,-88.182885,15,NA,COVID19
+LENO,woodyWetlands,31.806282,-88.195217,16.7,NA,COVID19
+SERC,deciduousForest,38.894058,-76.546297,4.9,NA,COVID19
+SERC,deciduousForest,38.880025,-76.548383,3,NA,COVID19
+SERC,deciduousForest,38.868184,-76.535301,2.5,NA,COVID19
+SERC,cultivatedCrops,38.873978,-76.535923,6.9,NA,COVID19
+SERC,deciduousForest,38.896257,-76.55818,17.3,NA,COVID19
+SERC,deciduousForest,38.880016,-76.561641,19.3,NA,COVID19
+SERC,deciduousForest,38.880016,-76.561641,19.3,NA,COVID19
+SERC,deciduousForest,38.896257,-76.55818,17.3,NA,COVID19
+SERC,cultivatedCrops,38.873978,-76.535923,6.9,NA,COVID19
+SERC,deciduousForest,38.894058,-76.546297,4.9,NA,COVID19
+SERC,deciduousForest,38.880025,-76.548383,3,NA,COVID19
+SERC,deciduousForest,38.868184,-76.535301,2.5,NA,COVID19
+TALL,deciduousForest,32.976366,-87.432192,114.7,NA,Consecutive rainy days prevented sampling within protocol guidelines.
+TALL,evergreenForest,32.971554,-87.415844,139,NA,Consecutive rainy days prevented sampling within protocol guidelines.
+TALL,mixedForest,32.894409,-87.416533,117,NA,Consecutive rainy days prevented sampling within protocol guidelines.
+TALL,mixedForest,32.920826,-87.42896,99.3,NA,Consecutive rainy days prevented sampling within protocol guidelines.
+TALL,evergreenForest,32.899153,-87.444554,111.1,NA,Consecutive rainy days prevented sampling within protocol guidelines.
+TALL,deciduousForest,32.922873,-87.434098,126.8,NA,Consecutive rainy days prevented sampling within protocol guidelines.
+OSBS,evergreenForest,29.683403,-81.960448,41.8,NA,COVID19
+OSBS,deciduousForest,29.678818,-81.947792,36.9,NA,COVID19
+OSBS,evergreenForest,29.703656,-81.958372,35,NA,COVID19
+OSBS,woodyWetlands,29.704063,-82.008061,34.4,NA,COVID19
+OSBS,mixedForest,29.688556,-81.970004,38.6,NA,COVID19
+OSBS,woodyWetlands,29.678312,-82.015674,29.7,NA,COVID19
+BLAN,pastureHay,39.083875,-77.966321,159.2,NA,COVID19
+BLAN,pastureHay,39.101651,-77.981855,159,NA,COVID19
+BLAN,pastureHay,39.088416,-77.961331,123.7,NA,COVID19
+BLAN,deciduousForest,39.082719,-77.95959,134.9,NA,COVID19
+BLAN,deciduousForest,39.088729,-77.955492,125.9,NA,COVID19
+BLAN,deciduousForest,39.086224,-77.972736,168.3,NA,COVID19
+LENO,woodyWetlands,31.817828,-88.182885,15,NA,COVID19
+LENO,deciduousForest,31.80946,-88.181413,11.3,NA,COVID19
+LENO,woodyWetlands,31.806282,-88.195217,16.7,NA,COVID19
+LENO,woodyWetlands,31.8173,-88.19149,12.1,NA,COVID19
+LENO,deciduousForest,31.809574,-88.18756,13.2,NA,COVID19
+LENO,woodyWetlands,31.822384,-88.181964,12.6,NA,COVID19
+SERC,deciduousForest,38.896257,-76.55818,17.3,NA,COVID19
+SERC,deciduousForest,38.868184,-76.535301,2.5,NA,COVID19
+SERC,deciduousForest,38.880016,-76.561641,19.3,NA,COVID19
+SERC,deciduousForest,38.880025,-76.548383,3,NA,COVID19
+SERC,cultivatedCrops,38.873978,-76.535923,6.9,NA,COVID19
+SERC,deciduousForest,38.894058,-76.546297,4.9,NA,COVID19
+SERC,deciduousForest,38.868184,-76.535301,2.5,NA,COVID19
+SERC,deciduousForest,38.896257,-76.55818,17.3,NA,COVID19
+SERC,deciduousForest,38.880016,-76.561641,19.3,NA,COVID19
+SERC,cultivatedCrops,38.873978,-76.535923,6.9,NA,COVID19
+SERC,deciduousForest,38.894058,-76.546297,4.9,NA,COVID19
+SERC,deciduousForest,38.880025,-76.548383,3,NA,COVID19
+KONZ,deciduousForest,39.103714,-96.597835,337.3,NA,COVID19
+KONZ,grasslandHerbaceous,39.074113,-96.557106,423.7,NA,COVID19
+KONZ,grasslandHerbaceous,39.087937,-96.545918,433.4,NA,COVID19
+KONZ,grasslandHerbaceous,39.109647,-96.551369,371.2,NA,COVID19
+KONZ,grasslandHerbaceous,39.107902,-96.584437,391.2,NA,COVID19
+KONZ,grasslandHerbaceous,39.118977,-96.547145,394.4,NA,COVID19
+LENO,deciduousForest,31.809574,-88.18756,13.2,NA,Location wet. Unable to reschedule.
+LENO,woodyWetlands,31.8173,-88.19149,12.1,NA,Location wet. Unable to resample.
+LENO,woodyWetlands,31.822384,-88.181964,12.6,NA,Location wet. Unable to reschedule.
+LENO,deciduousForest,31.80946,-88.181413,11.3,NA,Location wet. Unable to reschedule.
+LENO,woodyWetlands,31.817828,-88.182885,15,NA,Location wet. Unable to reschedule.
+LENO,woodyWetlands,31.806282,-88.195217,16.7,NA,Location wet. Unable to reschedule.
